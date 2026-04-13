@@ -1,0 +1,7 @@
+yt-dlp == 2026.3.17
+openai-whisper == 20250625
+uvicorn == 0.44.0
+loguru == 0.7.3
+fastapi == 0.135.3
+pydantic == 2.12.5
+python-multipart == 0.0.24
