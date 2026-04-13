@@ -440,6 +440,127 @@ HTML_CONTENT = """
             margin-top: 8px;
         }
 
+        .primary-color-tile {
+            display: grid;
+            gap: 12px;
+        }
+
+        .primary-color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .primary-color-swatch {
+            position: relative;
+            width: 100%;
+            padding: 0;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid #d8e2ff;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .primary-color-swatch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .primary-color-swatch:focus-visible {
+            outline: 3px solid rgba(25, 102, 255, 0.35);
+            outline-offset: 1px;
+        }
+
+        .primary-color-swatch::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 8px);
+            transform: translateX(-50%) translateY(4px);
+            background: rgba(20, 29, 62, 0.96);
+            color: #fff;
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s, transform 0.15s;
+            z-index: 3;
+        }
+
+        .primary-color-swatch:hover::after,
+        .primary-color-swatch:focus-visible::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .primary-color-chip {
+            height: 34px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .primary-color-label {
+            padding: 6px;
+            display: grid;
+            gap: 2px;
+            font-size: 11px;
+            line-height: 1.2;
+            color: #2b3350;
+        }
+
+        .primary-color-label strong {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1f2a46;
+        }
+
+        .primary-color-status {
+            min-height: 18px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1f8b4c;
+        }
+
+        .primary-color-status.error {
+            color: #a23333;
+        }
+
+        .color-picker-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
+        }
+
+        .color-picker-link:hover {
+            filter: brightness(1.04);
+        }
+
+        @media (max-width: 900px) {
+            .primary-color-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            .primary-color-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
         @media (max-width: 1500px) {
             .page-wrapper {
                 grid-template-columns: repeat(3, minmax(260px, 1fr));
@@ -483,6 +604,7 @@ HTML_CONTENT = """
                     <a href="/wordlist-manager">&#128221; Wordlist Manager</a>
                     <a href="/navigator">&#128269; Video Navigator</a>
                     <a href="/blog-navigator">&#128240; Blog Navigator</a>
+                    <a href="/docs/index-refresh">&#128214; Index Refresh Docs</a>
                 </div>
             </div>
         </div>
@@ -635,6 +757,41 @@ HTML_CONTENT = """
                     <button type="button" id="copyChaptersBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
                 </div>
                 <textarea id="chapterOutput" readonly style="width:100%; min-height:160px; font-family:monospace; font-size:13px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
+            </div>
+        </div>
+
+        <!-- Feature 7: Primary Brand Colors -->
+        <div class="container">
+            <h1>&#127912; Primary Brand Colors</h1>
+            <p class="subtitle">Quick reference for core Dynatrace colors</p>
+
+            <div class="primary-color-tile">
+                <div class="primary-color-grid" aria-label="Primary Dynatrace colors">
+                    <button type="button" class="primary-color-swatch" data-name="Pink" data-hex="#BB0FD2" data-tooltip="Pink - #BB0FD2" title="Pink - #BB0FD2" aria-label="Pink #BB0FD2 copy hex">
+                        <div class="primary-color-chip" style="background:#BB0FD2;"></div>
+                        <div class="primary-color-label"><strong>Pink</strong><span>#BB0FD2</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Purple" data-hex="#5E29E5" data-tooltip="Purple - #5E29E5" title="Purple - #5E29E5" aria-label="Purple #5E29E5 copy hex">
+                        <div class="primary-color-chip" style="background:#5E29E5;"></div>
+                        <div class="primary-color-label"><strong>Purple</strong><span>#5E29E5</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Blue" data-hex="#1966FF" data-tooltip="Blue - #1966FF" title="Blue - #1966FF" aria-label="Blue #1966FF copy hex">
+                        <div class="primary-color-chip" style="background:#1966FF;"></div>
+                        <div class="primary-color-label"><strong>Blue</strong><span>#1966FF</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Turquoise" data-hex="#5DF2E0" data-tooltip="Turquoise - #5DF2E0" title="Turquoise - #5DF2E0" aria-label="Turquoise #5DF2E0 copy hex">
+                        <div class="primary-color-chip" style="background:#5DF2E0;"></div>
+                        <div class="primary-color-label"><strong>Turquoise</strong><span>#5DF2E0</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Black" data-hex="#000000" data-tooltip="Black - #000000" title="Black - #000000" aria-label="Black #000000 copy hex">
+                        <div class="primary-color-chip" style="background:#000000;"></div>
+                        <div class="primary-color-label"><strong>Black</strong><span>#000000</span></div>
+                    </button>
+                </div>
+
+                <div id="primaryColorStatus" class="primary-color-status" aria-live="polite"></div>
+
+                <a class="color-picker-link" href="/color-picker">Open Full Color Picker</a>
             </div>
         </div>
 
@@ -898,6 +1055,52 @@ HTML_CONTENT = """
             // Load wordlist on page open
             loadWordlist();
         }
+
+        // Feature 7: Primary Brand Colors
+        const primaryColorStatus = document.getElementById('primaryColorStatus');
+        const primaryColorSwatches = document.querySelectorAll('.primary-color-swatch');
+
+        async function copyPrimaryColorHex(hex) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(hex);
+                return;
+            }
+
+            const helper = document.createElement('textarea');
+            helper.value = hex;
+            helper.setAttribute('readonly', '');
+            helper.style.position = 'fixed';
+            helper.style.opacity = '0';
+            helper.style.pointerEvents = 'none';
+            document.body.appendChild(helper);
+            helper.select();
+            const copied = document.execCommand('copy');
+            document.body.removeChild(helper);
+
+            if (!copied) {
+                throw new Error('Clipboard unavailable in this browser context');
+            }
+        }
+
+        function setPrimaryColorStatus(kind, text) {
+            primaryColorStatus.className = kind === 'error' ? 'primary-color-status error' : 'primary-color-status';
+            primaryColorStatus.textContent = text;
+        }
+
+        primaryColorSwatches.forEach((swatch) => {
+            swatch.addEventListener('click', async () => {
+                const name = swatch.dataset.name || 'Color';
+                const hex = swatch.dataset.hex || '';
+                if (!hex) return;
+
+                try {
+                    await copyPrimaryColorHex(hex);
+                    setPrimaryColorStatus('success', 'Copied ' + name + ' ' + hex + ' to clipboard');
+                } catch (error) {
+                    setPrimaryColorStatus('error', 'Copy failed: ' + error.message);
+                }
+            });
+        });
 
         // ── Feature 5: Highlight Reel ──────────────────────────────────────
 
@@ -3458,6 +3661,9 @@ NAVIGATOR_HTML = """<!DOCTYPE html>
     <div class="search-wrap">
         <input type="search" id="searchInput" placeholder="Search videos and chapters&hellip;" autocomplete="off" autofocus spellcheck="false">
     </div>
+    <div class="meta-row" style="margin-top: 8px;">
+        Need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700; text-decoration:underline;">Index Refresh Docs</a>.
+    </div>
     <div class="meta-row" id="metaRow"></div>
     <div class="grid" id="grid"></div>
 
@@ -3763,6 +3969,9 @@ BLOG_NAVIGATOR_HTML = """<!DOCTYPE html>
     <div class="search-wrap">
         <input type="search" id="searchInput" placeholder="Search blogs by keyword, category, or summary..." autocomplete="off" autofocus spellcheck="false">
     </div>
+    <div class="meta-row" style="margin-top: 8px;">
+        Need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700; text-decoration:underline;">Index Refresh Docs</a>.
+    </div>
     <div class="meta-row" id="metaRow"></div>
     <div class="grid" id="grid"></div>
 
@@ -3860,6 +4069,229 @@ BLOG_NAVIGATOR_HTML = """<!DOCTYPE html>
 </html>"""
 
 
+INDEX_REFRESH_DOCS_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynatrace DevRel Toolbox - Index Refresh Docs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
+            min-height: 100vh;
+            color: #10224f;
+        }
+
+        header {
+            background: rgba(0,0,0,0.25);
+            backdrop-filter: blur(8px);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header svg {
+            width: 32px;
+            height: 32px;
+            fill: #fff;
+            flex-shrink: 0;
+        }
+
+        .titles {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .brand {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.65);
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .back {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 5px 14px;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .back:hover { background: rgba(255,255,255,0.15); }
+
+        .docs-wrap {
+            max-width: 980px;
+            margin: 24px auto 40px;
+            padding: 0 16px;
+        }
+
+        .shell {
+            background: rgba(255,255,255,0.96);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.65);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+            overflow: hidden;
+        }
+
+        .content {
+            padding: 20px 24px 26px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .docs-top {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #e9f1ff 0%, #f3efff 100%);
+            border-bottom: 1px solid #d7e2ff;
+        }
+
+        .docs-top h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #1e2f6b;
+        }
+
+        .callout {
+            background: #eef4ff;
+            border: 1px solid #d3e1ff;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #223d7a;
+        }
+
+        section {
+            background: #fff;
+            border: 1px solid #e6ecff;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #1e2f6b;
+            margin-bottom: 10px;
+        }
+
+        ol {
+            margin-left: 18px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        li + li {
+            margin-top: 6px;
+        }
+
+        pre {
+            margin-top: 10px;
+            background: #0f1f4a;
+            color: #e7eeff;
+            border-radius: 8px;
+            padding: 11px 12px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        }
+
+        @media (max-width: 680px) {
+            header {
+                padding: 14px 12px;
+            }
+
+            .back {
+                padding: 5px 10px;
+            }
+
+            .docs-wrap {
+                margin-top: 14px;
+                padding: 0 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
+            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
+        </svg>
+        <div class="titles">
+            <span class="brand">Dynatrace</span>
+            <h1>Index Refresh Docs</h1>
+        </div>
+        <a href="/" class="back">&larr; Back to Toolbox</a>
+    </header>
+
+    <main class="docs-wrap">
+    <div class="shell">
+        <div class="docs-top">
+            <h2>How To Refresh Content Indexes</h2>
+        </div>
+
+        <div class="content">
+            <div class="callout">
+                Use these commands from a local devcontainer terminal in the workspace root. This updates the JSON index files consumed by Blog Navigator and Video Navigator.
+            </div>
+
+            <section>
+                <h2>Update Blog Posts</h2>
+                <ol>
+                    <li>Open the devcontainer terminal in the project root.</li>
+                    <li>Run the blog index updater command.</li>
+                    <li>Reload Blog Navigator to confirm new posts are searchable.</li>
+                </ol>
+                <pre><code>python3 index_updater.py blog --base-dir .</code></pre>
+            </section>
+
+            <section>
+                <h2>Update YouTube Videos</h2>
+                <ol>
+                    <li>Open the devcontainer terminal in the project root.</li>
+                    <li>Run a batch update for the channel index (videos and shorts).</li>
+                    <li>Reload Video Navigator and verify new videos and chapter links appear.</li>
+                </ol>
+                <pre><code>python3 index_updater.py video --base-dir . --batch-size 50</code></pre>
+            </section>
+
+            <section>
+                <h2>Helpful Variants</h2>
+                <pre><code># Rebuild all video index entries from scratch
+python3 index_updater.py video --base-dir . --batch-size 9999 --force
+
+# Limit blog crawler depth when testing
+python3 index_updater.py blog --base-dir . --max-pages 5</code></pre>
+            </section>
+        </div>
+    </div>
+    </main>
+</body>
+</html>"""
+
+
 @app.get("/navigator", response_class=HTMLResponse)
 async def get_navigator():
     """Serve the standalone Channel Navigator page."""
@@ -3870,6 +4302,12 @@ async def get_navigator():
 async def get_blog_navigator():
     """Serve the standalone Blog Navigator page."""
     return BLOG_NAVIGATOR_HTML
+
+
+@app.get("/docs/index-refresh", response_class=HTMLResponse)
+async def get_index_refresh_docs():
+    """Serve maintainer docs for refreshing blog and video indexes."""
+    return INDEX_REFRESH_DOCS_HTML
 
 
 if __name__ == "__main__":
