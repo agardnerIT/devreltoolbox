@@ -6,11 +6,9 @@ import sys
 from pathlib import Path
 from urllib import parse
 
-
-#SECRETS_FILE = Path("/etc/video-toolbox/secrets.env")
-SECRETS_FILE = Path("/absoluterubbish")
 DEFAULT_URL = "https://www.youtube.com/watch?v=t9kHPKL9yKY"
 DEFAULT_OUTPUT = Path(__file__).parent / "subtitle_cache"
+SECRETS_FILE = Path(__file__).parent / "secrets.env"
 
 
 def log(msg: str) -> None:
