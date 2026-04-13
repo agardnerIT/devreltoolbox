@@ -6,7 +6,6 @@
   },
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-  "postCreateCommand": "python -m pip install --upgrade pip && pip install -r requirements.txt",
   "customizations": {
     "vscode": {
       "settings": {
