@@ -6,7 +6,7 @@ import uvicorn
 import asyncio
 import threading
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from loguru import logger
 import sys
@@ -654,6 +654,13 @@ HTML_CONTENT = """
             }
         });
 
+        function renderMarkdownSafe(input) {
+            if (typeof input !== 'string' || !input.trim()) {
+                return '<p><em>No summary available.</em></p>';
+            }
+            return marked.parse(input);
+        }
+
         urlForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -681,7 +688,7 @@ HTML_CONTENT = """
                 if (response.ok) {
                     message.className = 'message success';
                     message.innerHTML = `✓ Subtitles downloaded and corrected! ${data.changes_count} change(s) made.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    ytSummaryContent.innerHTML = marked.parse(data.summary);
+                    ytSummaryContent.innerHTML = renderMarkdownSafe(data.summary);
                     ytSummaryContainer.style.display = 'block';
                     urlForm.reset();
                 } else {
@@ -729,7 +736,7 @@ HTML_CONTENT = """
                 if (response.ok) {
                     srtMessage.className = 'message success';
                     srtMessage.innerHTML = `✓ Correction complete! ${data.changes_count} change(s) made.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    summaryContent.innerHTML = marked.parse(data.summary);
+                    summaryContent.innerHTML = renderMarkdownSafe(data.summary);
                     summaryContainer.style.display = 'block';
                     srtForm.reset();
                 } else {
@@ -785,7 +792,7 @@ HTML_CONTENT = """
                 if (response.ok) {
                     mp4Message.className = 'message success';
                     mp4Message.innerHTML = `\u2713 Transcription complete! ${data.changes_count} wordlist correction(s) applied.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    mp4SummaryContent.innerHTML = marked.parse(data.summary);
+                    mp4SummaryContent.innerHTML = renderMarkdownSafe(data.summary);
                     mp4SummaryContainer.style.display = 'block';
                     mp4Form.reset();
                 } else {
@@ -2453,10 +2460,10 @@ async def download_subtitles(data: YouTubeURL):
 
             if result.returncode != 0:
                 logger.error(f"yt-dlp error: {result.stderr}")
-                return {
+                return JSONResponse(status_code=400, content={
                     "status": "error",
                     "detail": f"Failed to download subtitles: {result.stderr}"
-                }, 400
+                })
 
             logger.info(f"yt-dlp output: {result.stdout}")
 
@@ -2464,10 +2471,10 @@ async def download_subtitles(data: YouTubeURL):
             srt_files = list(SUBTITLES_DIR.glob("*.srt"))
             if not srt_files:
                 logger.error("No SRT file was generated")
-                return {
+                return JSONResponse(status_code=400, content={
                     "status": "error",
                     "detail": "No subtitles found for this video. The video may not have automatic captions available."
-                }, 400
+                })
 
             # Get the most recently created file
             srt_file = max(srt_files, key=os.path.getctime)
@@ -2512,16 +2519,16 @@ async def download_subtitles(data: YouTubeURL):
         
     except subprocess.TimeoutExpired:
         logger.error("Download timed out")
-        return {
+        return JSONResponse(status_code=400, content={
             "status": "error",
             "detail": "Download timed out. Please try again."
-        }, 400
+        })
     except Exception as e:
         logger.error(f"Error downloading subtitles: {str(e)}")
-        return {
+        return JSONResponse(status_code=400, content={
             "status": "error",
             "detail": f"Error: {str(e)}"
-        }, 400
+        })
 
 @app.get("/download/{filename}")
 async def download_file(filename: str):
@@ -2529,7 +2536,7 @@ async def download_file(filename: str):
     file_path = SUBTITLES_DIR / filename
     
     if not file_path.exists():
-        return {"detail": "File not found"}, 404
+        raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(file_path, media_type="text/plain", filename=filename)
 
