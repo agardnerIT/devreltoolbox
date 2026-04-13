@@ -1428,8 +1428,8 @@ COLOR_PICKER_BODY_HTML = f"""
         <h3>Useful Brand Links</h3>
         <ul>
             <li><a href="https://live.standards.site/dynatrace/" target="_blank" rel="noopener" class="external-link">Dynatrace Brand Guidelines</a></li>
-            <li><a href="https://cdn.dm.dynatrace.com/assets/documents/media-kit/dynatrace-logo-presskit.zip" target="_blank" rel="noopener">Dynatrace Logo Press Kit (ZIP)</a></li>
-            <li><a href="https://live.standards.site/dynatrace/color" target="_blank" rel="noopener">Dynatrace Color Guidelines</a></li>
+            <li><a href="https://cdn.dm.dynatrace.com/assets/documents/media-kit/dynatrace-logo-presskit.zip" target="_blank" rel="noopener" class="external-link">Dynatrace Logo Press Kit (ZIP)</a></li>
+            <li><a href="https://live.standards.site/dynatrace/color" target="_blank" rel="noopener" class="external-link">Dynatrace Color Guidelines</a></li>
         </ul>
     </section>
 </main>
