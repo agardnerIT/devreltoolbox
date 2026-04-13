@@ -20,7 +20,6 @@ If subtitle download fails with a bot/sign-in challenge:
 
 1. Run the devcontainer locally (desktop Docker + VS Code Dev Containers).
 2. Retry the subtitle flow from the local environment.
-3. If needed, provide yt-dlp cookies to authenticate your request.
 
 Security reminders:
 
