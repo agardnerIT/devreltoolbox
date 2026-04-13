@@ -1,5 +1,24 @@
 # devreltoolbox
 
+## Quick start (devcontainer)
+
+1. Clone this repo locally.
+2. Create a .env file with your LANGDOCK_API_KEY (do not commit this file).
+
+```
+export LANGDOCK_API_KEY=*****
+```
+
+3. In VS Code, open View > Command Palette, then run Rebuild and Reopen in Container.
+4. First startup takes about 5 minutes because it downloads heavier ML dependencies (including Whisper and a subtitle transcription model).
+5. After startup, run:
+
+```
+python app.py
+```
+
+6. Open `http://localhost:8000`
+
 ## YouTube subtitle extraction in devcontainers
 
 Some YouTube videos require an authenticated session and may fail with errors like:
