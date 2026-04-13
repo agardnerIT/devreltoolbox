@@ -53,6 +53,29 @@ def load_dotenv(dotenv_path: Path) -> None:
 BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
 
+YOUTUBE_AUTH_HELP = (
+    "YouTube requested sign-in verification. In remote/browser devcontainer sessions, "
+    "the app cannot access your local browser cookies automatically. "
+    "Run the devcontainer locally and provide yt-dlp cookies as needed."
+)
+
+
+def _yt_requires_auth(stderr_text: str) -> bool:
+    text = (stderr_text or "").lower()
+    return (
+        "sign in to confirm" in text
+        or "not a bot" in text
+        or "--cookies-from-browser" in text
+        or "--cookies" in text
+    )
+
+
+def _subtitle_error_detail(stderr_text: str) -> str:
+    raw = (stderr_text or "").strip() or "yt-dlp subtitle download failed"
+    if _yt_requires_auth(raw):
+        return f"Failed to download subtitles: {YOUTUBE_AUTH_HELP}"
+    return f"Failed to download subtitles: {raw}"
+
 app = FastAPI()
 
 class YouTubeURL(BaseModel):
@@ -2462,7 +2485,7 @@ async def download_subtitles(data: YouTubeURL):
                 logger.error(f"yt-dlp error: {result.stderr}")
                 return JSONResponse(status_code=400, content={
                     "status": "error",
-                    "detail": f"Failed to download subtitles: {result.stderr}"
+                    "detail": _subtitle_error_detail(result.stderr)
                 })
 
             logger.info(f"yt-dlp output: {result.stdout}")
@@ -3032,7 +3055,10 @@ async def highlight_reel_endpoint(data: HighlightReelRequest):
                         "yt-dlp", "--write-auto-subs", "--sub-format", "srt",
                         "--skip-download", "-o", output_template, data.url,
                     ]
-                    subprocess.run(sub_cmd, capture_output=True, text=True, timeout=60)
+                    sub_result = subprocess.run(sub_cmd, capture_output=True, text=True, timeout=60)
+                    if sub_result.returncode != 0:
+                        _emit("error", detail=_subtitle_error_detail(sub_result.stderr))
+                        return
                     srt_files = sorted(SUBTITLES_DIR.glob("*.srt"), key=os.path.getctime)
                     if srt_files:
                         srt_content = srt_files[-1].read_text(encoding='utf-8', errors='replace')
@@ -3110,7 +3136,7 @@ def _fetch_srt_for_video(video_id: str | None, url: str) -> str:
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if result.returncode != 0:
-        raise RuntimeError(f"Could not download subtitles: {result.stderr[:400]}")
+        raise RuntimeError(_subtitle_error_detail(result.stderr[:400]))
 
     srt_files = sorted(SUBTITLES_DIR.glob("*.srt"), key=os.path.getctime)
     if not srt_files:
