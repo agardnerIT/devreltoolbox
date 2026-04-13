@@ -209,3 +209,10 @@ __marimo__/
 
 # AG added
 notes.txt
+whisper_models
+video_cache
+subtitle_cache
+.DS_Store
+bin
+pyvenv.cfg
+share
