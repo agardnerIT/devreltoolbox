@@ -622,6 +622,12 @@ HTML_CONTENT = """
         // Header menu overlay
         const menuToggle = document.getElementById('menuToggle');
         const toolMenu = document.getElementById('toolMenu');
+        const urlForm = document.getElementById('urlForm');
+        const message = document.getElementById('message');
+        const spinner = document.getElementById('spinner');
+        const submitBtn = document.getElementById('submitBtn');
+        const ytSummaryContainer = document.getElementById('ytSummaryContainer');
+        const ytSummaryContent = document.getElementById('ytSummaryContent');
 
         function closeToolMenu() {
             toolMenu.hidden = true;
@@ -645,6 +651,51 @@ HTML_CONTENT = """
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && !toolMenu.hidden) {
                 closeToolMenu();
+            }
+        });
+
+        urlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const url = document.getElementById('youtubeUrl').value.trim();
+            if (!url) return;
+
+            message.style.display = 'none';
+            message.innerHTML = '';
+            ytSummaryContainer.style.display = 'none';
+            ytSummaryContent.innerHTML = '';
+
+            spinner.style.display = 'block';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Downloading...';
+
+            try {
+                const response = await fetch('/api/download-subtitles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    message.className = 'message success';
+                    message.innerHTML = `✓ Subtitles downloaded and corrected! ${data.changes_count} change(s) made.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
+                    ytSummaryContent.innerHTML = marked.parse(data.summary);
+                    ytSummaryContainer.style.display = 'block';
+                    urlForm.reset();
+                } else {
+                    message.className = 'message error';
+                    message.textContent = '✗ Error: ' + (data.detail || 'Failed to download subtitles');
+                }
+            } catch (error) {
+                message.className = 'message error';
+                message.textContent = '✗ Error: ' + error.message;
+            } finally {
+                message.style.display = 'block';
+                spinner.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Download Subtitles';
             }
         });
 
@@ -760,6 +811,7 @@ HTML_CONTENT = """
         const wordlistTableBody = document.querySelector('#wordlistTable tbody');
 
         async function loadWordlist() {
+            if (!wordlistTableBody || !wordlistTableContainer) return;
             try {
                 const resp = await fetch('/api/wordlist');
                 const data = await resp.json();
@@ -778,42 +830,44 @@ HTML_CONTENT = """
             } catch {}
         }
 
-        wordlistForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const wrong = document.getElementById('wrongWord').value.trim();
-            const right = document.getElementById('rightWord').value.trim();
-            if (!wrong || !right) return;
+        if (wordlistForm && wordlistMessage && wordlistSubmitBtn) {
+            wordlistForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const wrong = document.getElementById('wrongWord').value.trim();
+                const right = document.getElementById('rightWord').value.trim();
+                if (!wrong || !right) return;
 
-            wordlistMessage.style.display = 'none';
-            wordlistSubmitBtn.disabled = true;
+                wordlistMessage.style.display = 'none';
+                wordlistSubmitBtn.disabled = true;
 
-            try {
-                const response = await fetch('/api/wordlist', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wrong, right })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    wordlistMessage.className = 'message success';
-                    wordlistMessage.textContent = `\u2713 Added: \"${wrong}\" \u2192 \"${right}\"${data.updated ? ' (updated existing entry)' : ''}`;
-                    wordlistForm.reset();
-                    loadWordlist();
-                } else {
+                try {
+                    const response = await fetch('/api/wordlist', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ wrong, right })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        wordlistMessage.className = 'message success';
+                        wordlistMessage.textContent = `\u2713 Added: \"${wrong}\" \u2192 \"${right}\"${data.updated ? ' (updated existing entry)' : ''}`;
+                        wordlistForm.reset();
+                        loadWordlist();
+                    } else {
+                        wordlistMessage.className = 'message error';
+                        wordlistMessage.textContent = '\u2717 Error: ' + (data.detail || 'Failed to update wordlist');
+                    }
+                } catch (error) {
                     wordlistMessage.className = 'message error';
-                    wordlistMessage.textContent = '\u2717 Error: ' + (data.detail || 'Failed to update wordlist');
+                    wordlistMessage.textContent = '\u2717 Error: ' + error.message;
+                } finally {
+                    wordlistMessage.style.display = 'block';
+                    wordlistSubmitBtn.disabled = false;
                 }
-            } catch (error) {
-                wordlistMessage.className = 'message error';
-                wordlistMessage.textContent = '\u2717 Error: ' + error.message;
-            } finally {
-                wordlistMessage.style.display = 'block';
-                wordlistSubmitBtn.disabled = false;
-            }
-        });
+            });
 
-        // Load wordlist on page open
-        loadWordlist();
+            // Load wordlist on page open
+            loadWordlist();
+        }
 
         // ── Feature 5: Highlight Reel ──────────────────────────────────────
 
