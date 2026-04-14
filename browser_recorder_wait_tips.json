@@ -1,0 +1,46 @@
+{
+  "tips": [
+    {
+      "type": "advice",
+      "title": "Auto-discovery in minutes",
+      "text": "Dynatrace automatically discovers services and dependencies so you can see the full topology quickly.",
+      "linkLabel": "Read about Smartscape",
+      "linkUrl": "https://docs.dynatrace.com/docs/platform/smartscape"
+    },
+    {
+      "type": "advice",
+      "title": "Davis AI for root cause analysis",
+      "text": "Davis AI correlates events to help identify likely root causes faster than manual triage.",
+      "linkLabel": "Explore Davis AI docs",
+      "linkUrl": "https://docs.dynatrace.com/docs/dynatrace-intelligence"
+    },
+    {
+      "type": "short",
+      "title": "Perform 2026 in Las Vegas",
+      "text": "Watch this short while your recording plan is generated.",
+      "linkLabel": "Open short on YouTube",
+      "linkUrl": "https://www.youtube.com/shorts/QHVx5EwMK4s"
+    },
+    {
+      "type": "advice",
+      "title": "Dynatrace YouTube channel",
+      "text": "Prefer deeper content? Open the full Dynatrace video library.",
+      "linkLabel": "Go to @Dynatrace on YouTube",
+      "linkUrl": "https://www.youtube.com/@Dynatrace/videos"
+    },
+    {
+      "type": "video",
+      "title": "Dynatrace and Deloitte",
+      "text": "Deloitte Observability Point of View with Jay McDonald",
+      "linkLabel": "Open video on YouTube",
+      "linkUrl": "https://www.youtube.com/watch?v=6BE6kF8I1Fo"
+    },
+    {
+      "type": "advice",
+      "title": "Built-in dashboards",
+      "text": "Create role-specific dashboards and share live operational health with teams in one place.",
+      "linkLabel": "Dashboard docs",
+      "linkUrl": "https://docs.dynatrace.com/docs/analyze-explore-automate/dashboards-and-notebooks"
+    }
+  ]
+}

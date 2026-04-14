@@ -3,21 +3,32 @@
 ## Quick start (devcontainer)
 
 1. Clone this repo locally.
-2. Create a .env file with your LANGDOCK_API_KEY (do not commit this file).
+2. Create a `.env` file with your `LANGDOCK_API_KEY` (do not commit this file).
 
 ```
 export LANGDOCK_API_KEY=*****
 ```
 
 3. In VS Code, open View > Command Palette, then run Rebuild and Reopen in Container.
-4. First startup takes about 5 minutes because it downloads heavier ML dependencies (including Whisper and a subtitle transcription model).
-5. After startup, run:
+4. The devcontainer now uses `ubuntu:noble` as the base image and installs the main runtime tools through Dev Container Features.
+5. On first container creation, `postCreateCommand` installs Python dependencies from `requirements.txt`.
+6. First startup can still take a few minutes because heavier ML dependencies are installed and Whisper may download model assets on first use.
+7. After startup, run:
 
 ```
 python app.py
 ```
 
-6. Open `http://localhost:8000`
+8. Open `http://localhost:8000`
+
+Included in the devcontainer:
+
+- Python 3.12 via the official Python feature
+- Node.js via the official Node feature
+- `ffmpeg` via a Dev Container Feature
+- `yt-dlp` via a Dev Container Feature
+
+Port `8000` is forwarded by the devcontainer configuration.
 
 ## YouTube subtitle extraction in devcontainers
 

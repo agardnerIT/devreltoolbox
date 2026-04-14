@@ -1,21 +1,22 @@
 {
   "name": "devrel-toolbox",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+  "image": "ubuntu:noble",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": false
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
+    "ghcr.io/devcontainers-extra/features/yt-dlp:2": {}
   },
-  "remoteUser": "vscode",
-  "updateRemoteUserUID": true,
-  "postStartCommand": "bash .devcontainer/ensure-workspace-write.sh /workspaces/devreltoolbox",
-  "customizations": {
-    "vscode": {
-      "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python"
-      },
-      "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance"
-      ]
+  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --no-cache-dir -r requirements.txt",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "devrel-toolbox"
     }
   }
 }

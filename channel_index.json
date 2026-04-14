@@ -1775,5 +1775,1760 @@
         "title": "Performance Obsession"
       }
     ]
+  },
+  {
+    "id": "-I6QPwylOfQ",
+    "title": "AI A/B Testing, AWS Bedrock, AI Compliance, and Security | What's New in Dynatrace",
+    "duration": "9:34",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "[music]"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "more important to AB test your models"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "Dinatris playground and interact with"
+      },
+      {
+        "time": "4:37",
+        "seconds": 277,
+        "title": "first of all, create a new data bucket"
+      },
+      {
+        "time": "6:07",
+        "seconds": 367,
+        "title": "prioritize security to focus the teams"
+      },
+      {
+        "time": "7:37",
+        "seconds": 457,
+        "title": "route problems and fix issues faster. As"
+      },
+      {
+        "time": "9:08",
+        "seconds": 548,
+        "title": "guide to the new problem, saving you"
+      }
+    ]
+  },
+  {
+    "id": "yNfbyHkGfIY",
+    "title": "Dynatrace + VCARB | Laura Heisman on performance obsession",
+    "duration": "1:31",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "officer at Dynatrace. The VCarb and"
+      }
+    ]
+  },
+  {
+    "id": "X5eVZDnjkok",
+    "title": "End-2-End Business Observability for SAP with Dynatrace",
+    "duration": "17:19",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[music]"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "business process starts and ends uh in"
+      },
+      {
+        "time": "3:02",
+        "seconds": 182,
+        "title": "80% of your monitoring um use cases are"
+      },
+      {
+        "time": "4:32",
+        "seconds": 272,
+        "title": "month end closing um that we have more"
+      },
+      {
+        "time": "6:02",
+        "seconds": 362,
+        "title": "things like that that um that your users"
+      },
+      {
+        "time": "7:34",
+        "seconds": 454,
+        "title": "if I go even even more into the"
+      },
+      {
+        "time": "9:06",
+        "seconds": 546,
+        "title": "messages um um um causing errors and"
+      }
+    ]
+  },
+  {
+    "id": "XHuLLatx6Ic",
+    "title": "Dynatrace + VCARB | Raffaele Boschetti",
+    "duration": "31",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "that are working on different part of"
+      }
+    ]
+  },
+  {
+    "id": "Nzmj8Rr8aWU",
+    "title": "Integrating Dynatrace DQL into IntelliJ for Engineers",
+    "duration": "10:14",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "you can see here we can just write"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "this is a super great um performance"
+      },
+      {
+        "time": "4:36",
+        "seconds": 276,
+        "title": "would also be great. Now let me ask"
+      },
+      {
+        "time": "6:07",
+        "seconds": 367,
+        "title": "code style options. Uh where you can set"
+      },
+      {
+        "time": "7:37",
+        "seconds": 457,
+        "title": "be exactly the same as on the notebooks"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "when you execute the query. Yeah, the"
+      }
+    ]
+  },
+  {
+    "id": "uF3KKV79zrA",
+    "title": "Agos enhances reliability of digital credit services with Dynatrace",
+    "duration": "3:18",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "Ducato. Agusto Ducato is the Italian"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "together with the datrace team that we"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "reaching the our business objective. So"
+      }
+    ]
+  },
+  {
+    "id": "zC1-Aw5YQLI",
+    "title": "Dynatrace + VCARB | Liam Lawson on performance obsession",
+    "duration": "31",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "all about performance obsession. And"
+      }
+    ]
+  },
+  {
+    "id": "i2dFa1p9Sm0",
+    "title": "Ingesting SonarQube Data into Dynatrace",
+    "duration": "11:02",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "custom extension. Um we had two months"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "develop over time. So how hotspots"
+      },
+      {
+        "time": "4:34",
+        "seconds": 274,
+        "title": "reliability guardian. Yeah, cool"
+      },
+      {
+        "time": "6:04",
+        "seconds": 364,
+        "title": "configuration"
+      },
+      {
+        "time": "7:37",
+        "seconds": 457,
+        "title": "um available on the self tenant a self"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "and it starts ingesting all this nice"
+      }
+    ]
+  },
+  {
+    "id": "dyGQPkkm76Q",
+    "title": "AI Observability Where It Counts",
+    "duration": "1:02",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "goes way beyond dashboards alone. It's"
+      }
+    ]
+  },
+  {
+    "id": "GaFrCqG9-Hc",
+    "title": "Dynatrace + VCARB | Alan Permane",
+    "duration": "31",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "obsessed. And we think about performance"
+      }
+    ]
+  },
+  {
+    "id": "cOJgteljC8E",
+    "title": "Confidence Where It Counts",
+    "duration": "12:41",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:13",
+        "seconds": 13,
+        "title": "Welcome to Dynatrace Detroit and thank"
+      },
+      {
+        "time": "1:43",
+        "seconds": 103,
+        "title": "to change that and turn AI behavior into"
+      },
+      {
+        "time": "3:14",
+        "seconds": 194,
+        "title": "trustworthy data is a competitive"
+      },
+      {
+        "time": "4:44",
+        "seconds": 284,
+        "title": "And finally, we're delivering a more"
+      },
+      {
+        "time": "6:14",
+        "seconds": 374,
+        "title": "Dietrace third platform enriches"
+      },
+      {
+        "time": "7:46",
+        "seconds": 466,
+        "title": "through dynat trace we uh basically"
+      },
+      {
+        "time": "9:18",
+        "seconds": 558,
+        "title": "This technical leap and modern approach"
+      }
+    ]
+  },
+  {
+    "id": "FLWCyVSEjwM",
+    "title": "Optimize Your Logs | Save Money and Boost Performance",
+    "duration": "35:42",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "Uh, we will cover uh topics around uh"
+      },
+      {
+        "time": "3:03",
+        "seconds": 183,
+        "title": "information from them you can move logs"
+      },
+      {
+        "time": "4:34",
+        "seconds": 274,
+        "title": "someone is uh ingesting 45 terabytes a"
+      },
+      {
+        "time": "6:05",
+        "seconds": 365,
+        "title": "scenario would uh be around about 80"
+      },
+      {
+        "time": "7:36",
+        "seconds": 456,
+        "title": "practice guide, and this is just an"
+      },
+      {
+        "time": "9:06",
+        "seconds": 546,
+        "title": "visual way. Great job on the slides"
+      }
+    ]
+  },
+  {
+    "id": "q8XlOh6mAhU",
+    "title": "Identify and Troubleshoot Business Problems in your Apps",
+    "duration": "6:48",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:05",
+        "seconds": 5,
+        "title": "Your business runs on software. You rely"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "are we doing in terms of order volume?"
+      },
+      {
+        "time": "3:07",
+        "seconds": 187,
+        "title": "So how many users are currently impacted"
+      },
+      {
+        "time": "4:39",
+        "seconds": 279,
+        "title": "trace like I had before right here we"
+      },
+      {
+        "time": "6:10",
+        "seconds": 370,
+        "title": "we lack is extracting business relevant"
+      }
+    ]
+  },
+  {
+    "id": "END9ICQvSIs",
+    "title": "Dynatrace + VCARB | Isack Hadjar on the power of data",
+    "duration": "31",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "relates to enterprise businesses just as"
+      }
+    ]
+  },
+  {
+    "id": "2QsrWOhFDsc",
+    "title": "Enrich Observability Data with Lookup Tables in Dynatrace | FreedomPay Demo",
+    "duration": "13:22",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "customer or by country or stuff that"
+      },
+      {
+        "time": "3:02",
+        "seconds": 182,
+        "title": "the country that store is located in"
+      },
+      {
+        "time": "4:33",
+        "seconds": 273,
+        "title": "obviously where you store it and then as"
+      },
+      {
+        "time": "6:05",
+        "seconds": 365,
+        "title": ">> Um then if we want to view"
+      },
+      {
+        "time": "7:37",
+        "seconds": 457,
+        "title": "specified when we uploaded the file"
+      },
+      {
+        "time": "9:08",
+        "seconds": 548,
+        "title": "with this approach, you have the raw"
+      }
+    ]
+  },
+  {
+    "id": "wZhGEM9PqFE",
+    "title": "Agos enhances reliability of digital credit services with Dynatrace",
+    "duration": "3:18",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "Ducato. Agusto Ducato is the Italian"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "together with the datrace team that we"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "reaching the our business objective. So"
+      }
+    ]
+  },
+  {
+    "id": "uocFVeWEI7M",
+    "title": "Self-Service Observability for Cloud-Native Apps",
+    "duration": "12:53",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Thanks to cloudnative architectures and"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "have any problems uh in terms of"
+      },
+      {
+        "time": "3:05",
+        "seconds": 185,
+        "title": "follow the red in case there's a real"
+      },
+      {
+        "time": "4:35",
+        "seconds": 275,
+        "title": "our generative AI. That means please"
+      },
+      {
+        "time": "6:06",
+        "seconds": 366,
+        "title": "you get to the span of the charge"
+      },
+      {
+        "time": "7:36",
+        "seconds": 456,
+        "title": "no troubleshooting guide or um you want"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "are I guess you understand where we end"
+      }
+    ]
+  },
+  {
+    "id": "l-JxRcsW21M",
+    "title": "Dynatrace + VCARB",
+    "duration": "3:28",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "Once we go out on the grid, the"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "we need perfect tools to find those"
+      },
+      {
+        "time": "3:13",
+        "seconds": 193,
+        "title": "[Music]"
+      }
+    ]
+  },
+  {
+    "id": "yGnM9pOtTgc",
+    "title": "Motorpoint drives frictionless omnichannel buying journeys with Dynatrace",
+    "duration": "3:15",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "engineering operations at MotorPoint"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "provisioned. Dra helped us speed up"
+      },
+      {
+        "time": "3:01",
+        "seconds": 181,
+        "title": "it doesn't want the day off and at"
+      }
+    ]
+  },
+  {
+    "id": "YXoRpp__qq8",
+    "title": "How to use OpenPipeline to redirect data to custom buckets",
+    "duration": "5:37",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "Hey everyone, in this video I want to"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "for our purposes in this video, uh it"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "And now I can set up my pipeline"
+      },
+      {
+        "time": "4:37",
+        "seconds": 277,
+        "title": "events again, you'll notice the same"
+      }
+    ]
+  },
+  {
+    "id": "Oesj07der9Y",
+    "title": "Dynatrace Can Do THAT with OpenTelemetry? | Anomaly Detection",
+    "duration": "33:11",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "telemetry? No way"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "I'm sending open telemetry data to"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "there. So like here for example. Yeah"
+      },
+      {
+        "time": "4:36",
+        "seconds": 276,
+        "title": "post uh from Mo that you'd mentioned um"
+      },
+      {
+        "time": "6:06",
+        "seconds": 366,
+        "title": "on that. So whatever I'm showing here is"
+      },
+      {
+        "time": "7:38",
+        "seconds": 458,
+        "title": "now"
+      },
+      {
+        "time": "9:09",
+        "seconds": 549,
+        "title": "example but it's quite near to 300 that"
+      }
+    ]
+  },
+  {
+    "id": "GSqLBhpCvWk",
+    "title": "Queen Mary University of London transforms campus experiences with Dynatrace",
+    "duration": "3:27",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "information officer here at Queen Mary"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "really looking at AI actively and for AI"
+      },
+      {
+        "time": "3:01",
+        "seconds": 181,
+        "title": "has transformed the way we operate at"
+      }
+    ]
+  },
+  {
+    "id": "35rzyxQZCpY",
+    "title": "Ensure service health with Dynatrace | Dynatrace App Spotlights",
+    "duration": "12:42",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Today we're putting the spotlight on the"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "here you also can filter on additional"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "metrics right you get your response"
+      },
+      {
+        "time": "4:34",
+        "seconds": 274,
+        "title": "previous time frame. So we see if"
+      },
+      {
+        "time": "6:07",
+        "seconds": 367,
+        "title": "combine this again to find easier what"
+      },
+      {
+        "time": "7:38",
+        "seconds": 458,
+        "title": "of these issues here. And if you want"
+      },
+      {
+        "time": "9:08",
+        "seconds": 548,
+        "title": "like you know there is a problem there"
+      }
+    ]
+  },
+  {
+    "id": "H1oSdYXw9I0",
+    "title": "Find the Unknown in Logs, Metrics, and Traces | Observability Forensics",
+    "duration": "27:57",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:05",
+        "seconds": 5,
+        "title": "Welcome to another tips and tricks"
+      },
+      {
+        "time": "1:36",
+        "seconds": 96,
+        "title": "your business events or the choiries"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "want to go back two steps to your"
+      },
+      {
+        "time": "4:36",
+        "seconds": 276,
+        "title": "uh let's dive into some of the use"
+      },
+      {
+        "time": "6:06",
+        "seconds": 366,
+        "title": "or the rag records that you are fetching"
+      },
+      {
+        "time": "7:36",
+        "seconds": 456,
+        "title": "time and the actual record time. So"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "So this gives us the understanding about"
+      }
+    ]
+  },
+  {
+    "id": "Tud2K3zyync",
+    "title": "Analyze Incidents with Davis® AI | Dynatrace App Spotlights",
+    "duration": "10:23",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Today we're putting the spotlight on the"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "the details but let's just select maybe"
+      },
+      {
+        "time": "3:05",
+        "seconds": 185,
+        "title": "namespace and I'm going to focus on"
+      },
+      {
+        "time": "4:37",
+        "seconds": 277,
+        "title": "So, for those of you that already know"
+      },
+      {
+        "time": "6:08",
+        "seconds": 368,
+        "title": "endpoint. Remember it was the charge"
+      },
+      {
+        "time": "7:38",
+        "seconds": 458,
+        "title": "some guidance. Now the cool thing is if"
+      },
+      {
+        "time": "9:08",
+        "seconds": 548,
+        "title": "query, and then you don't have to be"
+      }
+    ]
+  },
+  {
+    "id": "C7BeRwHs1rg",
+    "title": "Enhance your Dashboards | Prompt Engineering with Davis CoPilot®",
+    "duration": "13:34",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:05",
+        "seconds": 5,
+        "title": "And we're back for another tips and"
+      },
+      {
+        "time": "1:38",
+        "seconds": 98,
+        "title": "and then I get an explanation of how"
+      },
+      {
+        "time": "3:09",
+        "seconds": 189,
+        "title": "message was something like username and"
+      },
+      {
+        "time": "4:41",
+        "seconds": 281,
+        "title": "positives actually"
+      },
+      {
+        "time": "6:11",
+        "seconds": 371,
+        "title": "actually has some very important"
+      },
+      {
+        "time": "7:42",
+        "seconds": 462,
+        "title": "again. So basically what you're doing if"
+      },
+      {
+        "time": "9:14",
+        "seconds": 554,
+        "title": "things here right so I'm just removing"
+      }
+    ]
+  },
+  {
+    "id": "QVWvJe3Rwhg",
+    "title": "Nationwide improves banking systems resilience and service availability with Dynatrace",
+    "duration": "3:29",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "infrastructure and service delivery here"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "really key to our strategy and service"
+      },
+      {
+        "time": "3:03",
+        "seconds": 183,
+        "title": "just the underlying IT data. We can now"
+      }
+    ]
+  },
+  {
+    "id": "0lh3IN7gw9c",
+    "title": "Dynatrace Can Do THAT With OpenTelemetry? | The Dynatrace MCP Server",
+    "duration": "36:23",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "telemetry? No way"
+      },
+      {
+        "time": "1:38",
+        "seconds": 98,
+        "title": "access a service by communicating with"
+      },
+      {
+        "time": "3:08",
+        "seconds": 188,
+        "title": "steps and enable GitHub Copilot. Um, you"
+      },
+      {
+        "time": "4:40",
+        "seconds": 280,
+        "title": "of interesting things here. First of"
+      },
+      {
+        "time": "6:15",
+        "seconds": 375,
+        "title": "And here we go. It is a brand"
+      },
+      {
+        "time": "7:45",
+        "seconds": 465,
+        "title": "that have all the things that I need"
+      },
+      {
+        "time": "9:15",
+        "seconds": 555,
+        "title": "you'll notice that it has some"
+      }
+    ]
+  },
+  {
+    "id": "i1dp2-3Kvj8",
+    "title": "AI Observability explained | Gain insight into your AI models and agents",
+    "duration": "8:16",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "that you're currently doing to improve"
+      },
+      {
+        "time": "3:02",
+        "seconds": 182,
+        "title": "bottom as you're building your apps as"
+      },
+      {
+        "time": "4:32",
+        "seconds": 272,
+        "title": "optimize your prompts. It allows you to"
+      },
+      {
+        "time": "6:03",
+        "seconds": 363,
+        "title": "start with this one, right? One single"
+      },
+      {
+        "time": "7:35",
+        "seconds": 455,
+        "title": "of requests what are the responses uh"
+      }
+    ]
+  },
+  {
+    "id": "uq-RmBF_hyc",
+    "title": "Kubernetes Autoscaling Based on Custom Metrics",
+    "duration": "6:12",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "pod to basically change the actual"
+      },
+      {
+        "time": "3:05",
+        "seconds": 185,
+        "title": "spans need to have Kubernetes metadata"
+      },
+      {
+        "time": "4:38",
+        "seconds": 278,
+        "title": "dedicated workflow. So step one we will"
+      }
+    ]
+  },
+  {
+    "id": "womZLCh8Msc",
+    "title": "Ingest Business Events into Dynatrace",
+    "duration": "26:27",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:05",
+        "seconds": 5,
+        "title": "Welcome back to another observability"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "possible ways"
+      },
+      {
+        "time": "3:09",
+        "seconds": 189,
+        "title": "If I can click it"
+      },
+      {
+        "time": "4:41",
+        "seconds": 281,
+        "title": "when I when I add a new capture"
+      },
+      {
+        "time": "6:12",
+        "seconds": 372,
+        "title": "the key information from this request"
+      },
+      {
+        "time": "7:43",
+        "seconds": 463,
+        "title": "something like this cloud business"
+      },
+      {
+        "time": "9:14",
+        "seconds": 554,
+        "title": "deal about whether it's JSON or XML. We"
+      }
+    ]
+  },
+  {
+    "id": "Zl3WaABnrAQ",
+    "title": "Get Real-Time Business Insights with Dynatrace",
+    "duration": "17:10",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:05",
+        "seconds": 5,
+        "title": "Welcome to another observability lab"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "side of the house, real-time insights in"
+      },
+      {
+        "time": "3:05",
+        "seconds": 185,
+        "title": "but the core is really we want to"
+      },
+      {
+        "time": "4:37",
+        "seconds": 277,
+        "title": "to monitor that from an observability"
+      },
+      {
+        "time": "6:08",
+        "seconds": 368,
+        "title": "screenshot. You have the URL. You can"
+      },
+      {
+        "time": "7:40",
+        "seconds": 460,
+        "title": "beginning of a claim. Uh you need to"
+      },
+      {
+        "time": "9:12",
+        "seconds": 552,
+        "title": "time"
+      }
+    ]
+  },
+  {
+    "id": "GCzjEgJt5kA",
+    "title": "Integrate Observability into Your Dev Workflow",
+    "duration": "8:26",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "personalized experience. All right, so"
+      },
+      {
+        "time": "3:03",
+        "seconds": 183,
+        "title": "new window opens up and here is all"
+      },
+      {
+        "time": "4:33",
+        "seconds": 273,
+        "title": "great. It's pass but I'm failing on my"
+      },
+      {
+        "time": "6:04",
+        "seconds": 364,
+        "title": "Now, there's one more thing I want to"
+      },
+      {
+        "time": "7:34",
+        "seconds": 454,
+        "title": "overwhelm them with data. Use the"
+      }
+    ]
+  },
+  {
+    "id": "8VtvAzgE9H8",
+    "title": "Build your own Dynatrace Homepage | Dynatrace App Spotlights",
+    "duration": "4:18",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "case this these are the pieces of Dino"
+      },
+      {
+        "time": "3:08",
+        "seconds": 188,
+        "title": "Now, if you're a Dynatraceace admin, you"
+      }
+    ]
+  },
+  {
+    "id": "wzQ1jqDd3bY",
+    "title": "Dynatrace Can Do THAT with OpenTelemetry? | Service-Level Objectives",
+    "duration": "31:08",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "telemetry? No way"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "your screen then I can give you some"
+      },
+      {
+        "time": "3:05",
+        "seconds": 185,
+        "title": "Um is there an SLO app? Let's find"
+      },
+      {
+        "time": "4:36",
+        "seconds": 276,
+        "title": "easier, right? Yay. Um, so there's two"
+      },
+      {
+        "time": "6:07",
+        "seconds": 367,
+        "title": "behind the scenes basically looks into"
+      },
+      {
+        "time": "7:39",
+        "seconds": 459,
+        "title": "do you want to"
+      },
+      {
+        "time": "9:11",
+        "seconds": 551,
+        "title": "give our SLOs's and everything in life"
+      }
+    ]
+  },
+  {
+    "id": "T_Ejvcqzk6s",
+    "title": "Search data in DQL (Dynatrace Query Language)",
+    "duration": "2:39",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:07",
+        "seconds": 7,
+        "title": "that you want to search for a particular"
+      },
+      {
+        "time": "1:39",
+        "seconds": 99,
+        "title": "In the first example, if the token"
+      }
+    ]
+  },
+  {
+    "id": "1IvwLSrUA0Q",
+    "title": "Understand your business like never before with Dynatrace",
+    "duration": "1:27",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Digital ecosystems weren't always this"
+      }
+    ]
+  },
+  {
+    "id": "DcvB_GWTx8g",
+    "title": "How to Transform Logs into Metrics in Dynatrace",
+    "duration": "5:55",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "Hey everyone, in this quick tips and"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "Dynatraceace is going to look for field"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "chart, I've reenabled my make time"
+      },
+      {
+        "time": "4:34",
+        "seconds": 274,
+        "title": "before and split by which gives us a"
+      }
+    ]
+  },
+  {
+    "id": "NzFTO7aeKvs",
+    "title": "Where’s My Build? Unlocking SDLC Insights with Dynatrace",
+    "duration": "5:40",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "are events that we want you to send"
+      },
+      {
+        "time": "3:01",
+        "seconds": 181,
+        "title": "on that link, you get to the release"
+      },
+      {
+        "time": "4:33",
+        "seconds": 273,
+        "title": "scroll further down, I also said, hey"
+      }
+    ]
+  },
+  {
+    "id": "uzssir7ukBY",
+    "title": "Boost Productivity: DQL Upgrades, Sub-Workflows, and Custom Launchpads | What's New In Dynatrace",
+    "duration": "6:16",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Hey everyone and welcome to another"
+      },
+      {
+        "time": "1:35",
+        "seconds": 95,
+        "title": "actually need to be triple quoted. And"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "workflow and then you add the run"
+      },
+      {
+        "time": "4:40",
+        "seconds": 280,
+        "title": "here. We're searching the main log body"
+      }
+    ]
+  },
+  {
+    "id": "uEW7r_Nn2wQ",
+    "title": "Coca-Cola Hellenic Beverage Company strengthens support services and IT systems resilience",
+    "duration": "2:19",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "continuity manager in Coca-Cola helenic"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "uh an issue occurred with one of the"
+      }
+    ]
+  },
+  {
+    "id": "8g4ev3d3tak",
+    "title": "Observability and Data Sovereignty: Why Do They Matter?",
+    "duration": "4:10",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:36",
+        "seconds": 96,
+        "title": "a lot of the projects we do today"
+      },
+      {
+        "time": "3:07",
+        "seconds": 187,
+        "title": "example actually seamlessly helps us"
+      }
+    ]
+  },
+  {
+    "id": "TJtroXEWf6U",
+    "title": "How to Detect Bad Patterns in Logs and Traces",
+    "duration": "10:32",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "did the app spotlight. Uh but very"
+      },
+      {
+        "time": "3:03",
+        "seconds": 183,
+        "title": "if you also want to see um let's"
+      },
+      {
+        "time": "4:34",
+        "seconds": 274,
+        "title": "with messaging, uh with remote procedure"
+      },
+      {
+        "time": "6:05",
+        "seconds": 365,
+        "title": "exception on it and then uh summarize by"
+      },
+      {
+        "time": "7:36",
+        "seconds": 456,
+        "title": "logs where we are joining logs and spans"
+      },
+      {
+        "time": "9:06",
+        "seconds": 546,
+        "title": "obviously go further. You can say then"
+      }
+    ]
+  },
+  {
+    "id": "pk2qxI8I7go",
+    "title": "eBPF Monitoring with Inspektor Gadget and Dynatrace",
+    "duration": "6:59",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:36",
+        "seconds": 96,
+        "title": "probes by reporting the CPU time and the"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "exporters one for metrics and one for"
+      },
+      {
+        "time": "4:37",
+        "seconds": 277,
+        "title": "solutions will probably resolve that"
+      },
+      {
+        "time": "6:08",
+        "seconds": 368,
+        "title": "to report the usage of the EVPF probe"
+      }
+    ]
+  },
+  {
+    "id": "BELeXJbXz4E",
+    "title": "CareSource delivers reliable healthcare and achieves million-dollar savings with Dynatrace",
+    "duration": "2:36",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:03",
+        "seconds": 3,
+        "title": "director for Caresource for Application"
+      },
+      {
+        "time": "1:33",
+        "seconds": 93,
+        "title": "very expensive to have logging systems"
+      }
+    ]
+  },
+  {
+    "id": "K8rcj7fK9NM",
+    "title": "Create real-time visualizations from K8s data | Dynatrace App Spotlights",
+    "duration": "13:40",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Hi, today we're putting the spotlight on"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "preconfigured uh snippets. Now what I"
+      },
+      {
+        "time": "3:06",
+        "seconds": 186,
+        "title": "you know, I'll do another thing. You see"
+      },
+      {
+        "time": "4:39",
+        "seconds": 279,
+        "title": "I'll keep it as it is. The only"
+      },
+      {
+        "time": "6:10",
+        "seconds": 370,
+        "title": "I'm doing two actually I'm doing two"
+      },
+      {
+        "time": "7:41",
+        "seconds": 461,
+        "title": "I do with it? Right now I can"
+      },
+      {
+        "time": "9:12",
+        "seconds": 552,
+        "title": "but I don't want to get everyone"
+      }
+    ]
+  },
+  {
+    "id": "_upzH06QWWI",
+    "title": "Dynatrace can do THAT with OpenTelemetry? | Dashboards",
+    "duration": "28:05",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "What? Dynatrace can do that with open"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "my screen right now. Yeah perfect um"
+      },
+      {
+        "time": "3:03",
+        "seconds": 183,
+        "title": "Okay, here we go. I have a gap"
+      },
+      {
+        "time": "4:33",
+        "seconds": 273,
+        "title": "one, but I think a new dashboard is"
+      },
+      {
+        "time": "6:03",
+        "seconds": 363,
+        "title": "wondering that actually"
+      },
+      {
+        "time": "7:35",
+        "seconds": 455,
+        "title": "the data, refine your queries, and you"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "visualizing data that is queried through"
+      }
+    ]
+  },
+  {
+    "id": "ve2pFT2ucFE",
+    "title": "Transform Data Analysis with Microsoft Power BI and Dynatrace Grail",
+    "duration": "30:47",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[Music]"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "the playground. So folks remember"
+      },
+      {
+        "time": "3:02",
+        "seconds": 182,
+        "title": "this particular launchpad you can kind"
+      },
+      {
+        "time": "4:32",
+        "seconds": 272,
+        "title": "follow your typical uh IM policies or"
+      },
+      {
+        "time": "6:03",
+        "seconds": 363,
+        "title": "connector for Dynatraceace uh so we can"
+      },
+      {
+        "time": "7:34",
+        "seconds": 454,
+        "title": "time saved and then also some of the"
+      },
+      {
+        "time": "9:07",
+        "seconds": 547,
+        "title": "report. We'll also share this uh"
+      }
+    ]
+  },
+  {
+    "id": "FGPQjCJr7fw",
+    "title": "Raymond James strengthens application security with Dynatrace",
+    "duration": "2:16",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:02",
+        "seconds": 2,
+        "title": "and a technical vice president. Hi, I'm"
+      },
+      {
+        "time": "1:32",
+        "seconds": 92,
+        "title": "cause. Davis will pinpoint exactly where"
+      }
+    ]
+  },
+  {
+    "id": "GSrGvJ4iaH0",
+    "title": "10-Year Trace Analysis, Live Debugger, and Kubernetes Automation | What's New In Dynatrace",
+    "duration": "4:34",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:04",
+        "seconds": 4,
+        "title": "Hey everyone and welcome to another"
+      },
+      {
+        "time": "1:34",
+        "seconds": 94,
+        "title": "Kubernetes is a fully automated way to"
+      },
+      {
+        "time": "3:04",
+        "seconds": 184,
+        "title": "debugger in new and novel ways like"
+      }
+    ]
   }
 ]
