@@ -216,3 +216,6 @@ subtitle_cache
 bin
 pyvenv.cfg
 share
+docs
+recordings
+playwright_scripts
