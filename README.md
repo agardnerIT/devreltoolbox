@@ -1,25 +1,35 @@
 # devreltoolbox
 
-## Quick start (devcontainer)
+![Warning: Entirely vibecoded](https://img.shields.io/badge/Warning-Entirely%20vibecoded-orange?style=for-the-badge)
 
-1. Clone this repo locally.
-2. Create a `.env` file with your `LANGDOCK_API_KEY` (do not commit this file).
+## Quick start
 
-```
-export LANGDOCK_API_KEY=*****
-```
-
-3. In VS Code, open View > Command Palette, then run Rebuild and Reopen in Container.
-4. The devcontainer now uses `ubuntu:noble` as the base image and installs the main runtime tools through Dev Container Features.
-5. On first container creation, `postCreateCommand` installs Python dependencies from `requirements.txt`.
-6. First startup can still take a few minutes because heavier ML dependencies are installed and Whisper may download model assets on first use.
-7. After startup, run:
+1. Clone this repository.
 
 ```
+git clone https://github.com/agardnerit/devreltoolbox
+```
+
+2. Create your environment file from the sample:
+
+```bash
+cp .env.sample .env
+```
+
+3. Edit `.env` and set your `LANGDOCK_API_KEY`.
+4. Start the Codespace for this repository.
+5. In the Codespace terminal, run:
+
+```bash
 python app.py
 ```
 
-8. Open `http://localhost:8000`
+6. Open `http://localhost:8000`
+
+Notes:
+
+- The first startup can take a little longer because Python dependencies are installed and Whisper assets may be downloaded on first use.
+- Port `8000` is forwarded by the devcontainer/Codespaces configuration.
 
 Included in the devcontainer:
 
