@@ -480,6 +480,20 @@ def _fetch_srt_for_video(base_dir: Path, video_id: str) -> str:
     return content
 
 
+def _fetch_video_metadata(video_id: str, *, timeout: int = 45) -> dict:
+    """Fetch full metadata for a single video without downloading media."""
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    cmd = ["yt-dlp", "--skip-download", "--dump-json", "--no-warnings", url]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip()[:400] or "yt-dlp metadata fetch failed")
+
+    payload = (result.stdout or "").strip()
+    if not payload:
+        raise RuntimeError("yt-dlp metadata output was empty")
+    return json.loads(payload)
+
+
 def build_video_index(
     base_dir: Path,
     *,
@@ -493,7 +507,6 @@ def build_video_index(
     video_cb=None,
 ) -> dict:
     channel_index_file = base_dir / "channel_index.json"
-    wordlist_file = base_dir / "wordlist.json"
 
     def emit_status(msg: str):
         if status_cb:
@@ -511,18 +524,12 @@ def build_video_index(
     except (FileNotFoundError, json.JSONDecodeError):
         existing_videos = []
 
-    try:
-        with open(wordlist_file, encoding="utf-8") as f:
-            wordlist = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        wordlist = {}
-
     existing_by_id = {} if force else {v["id"]: v for v in existing_videos if isinstance(v, dict) and "id" in v}
     emit_status(f"Loaded {len(existing_videos)} existing video record(s)")
-    emit_status(f"Loaded {len(wordlist)} wordlist correction(s)")
+    emit_status("Fast mode: indexing metadata only (title + description), skipping subtitles and chapter generation")
 
     emit_status("Fetching channel videos and shorts…")
-    source_lists = []
+    source_lists: list[tuple[list[dict], str]] = []
     batch_target = max(1, int(batch_size))
     max_items = max(1, int(max_items))
     max_age_days = max(1, int(max_age_days))
@@ -541,17 +548,17 @@ def build_video_index(
             raise RuntimeError(f"Failed to list channel {label}: {result.stderr[:400]}")
         source_items = [json.loads(l) for l in result.stdout.splitlines() if l.strip()]
         emit_status(f"Found {len(source_items)} item(s) in channel {label}")
-        source_lists.append(source_items)
+        source_lists.append((source_items, label))
 
-    video_list = []
+    video_list: list[tuple[dict, str]] = []
     seen_ids = set()
-    for source_items in source_lists:
+    for source_items, label in source_lists:
         for item in source_items:
             video_id = item.get("id", "")
             if not video_id or video_id in seen_ids:
                 continue
             seen_ids.add(video_id)
-            video_list.append(item)
+            video_list.append((item, label))
             if len(video_list) >= max_items:
                 break
         if len(video_list) >= max_items:
@@ -567,7 +574,7 @@ def build_video_index(
     known_streak = 0
 
     total_candidates = len(video_list)
-    for idx, raw in enumerate(video_list, start=1):
+    for idx, (raw, source_label) in enumerate(video_list, start=1):
         if new_count >= batch_target:
             break
 
@@ -592,68 +599,30 @@ def build_video_index(
         emit_video(title, "progress")
 
         try:
-            emit_status(f"[{idx}/{total_candidates}] Fetching subtitles for '{title}'")
-            srt_content = _fetch_srt_for_video(base_dir, video_id)
-        except Exception:
+            meta = _fetch_video_metadata(video_id)
+        except Exception as exc:
             errors += 1
-            emit_video(f"⚠ No subtitles: {title}", "error")
+            emit_video(f"⚠ Metadata fetch failed: {title}", "error")
+            emit_status(
+                f"[{idx}/{total_candidates}] Skipped '{title}' because metadata fetch failed: {str(exc)[:180]}"
+            )
             continue
 
-        corrected_srt, correction_count = _apply_wordlist_to_srt(srt_content, wordlist)
-        if correction_count > 0:
-            emit_status(f"Applied {correction_count} subtitle correction(s) for '{title}'")
+        description = (meta.get("description") or raw.get("description") or "").strip()
+        uploaded = meta.get("upload_date") or raw.get("upload_date") or ""
+        searchable_text = f"{title} {description}".strip().lower()
 
-        timestamped = _srt_to_timestamped_text(corrected_srt)
-        if not timestamped:
-            errors += 1
-            emit_video(f"⚠ Empty transcript: {title}", "error")
-            continue
-
-        raw_chapters = None
-        last_exc = None
-        for attempt in range(1, 3):
-            try:
-                emit_status(f"[{idx}/{total_candidates}] Generating chapters for '{title}' (attempt {attempt}/2)")
-                raw_chapters = _call_openai_chapters(timestamped)
-                break
-            except Exception as exc:
-                last_exc = exc
-                emit_status(
-                    f"[{idx}/{total_candidates}] Chapter generation attempt {attempt} failed for '{title}': {str(exc)[:180]}"
-                )
-                if attempt < 2:
-                    emit_status(f"Chapter detection retry for '{title}'…")
-                    time.sleep(1.0)
-
-        if raw_chapters is None:
-            fallback_chapters = _fallback_chapters_from_transcript(timestamped)
-            if fallback_chapters:
-                emit_status(f"[{idx}/{total_candidates}] Using transcript-derived fallback chapters for '{title}'")
-                result_videos.append({"id": video_id, "title": title, "duration": duration, "chapters": fallback_chapters})
-                indexed_ids.add(video_id)
-                new_count += 1
-                emit_video(f"⚠ Fallback chapters: {title}", "done")
-                with open(channel_index_file, "w", encoding="utf-8") as f:
-                    json.dump(result_videos, f, indent=2, ensure_ascii=False)
-                time.sleep(0.2)
-                continue
-
-            errors += 1
-            err_text = str(last_exc).lower() if last_exc else ""
-            if "timeout" in err_text:
-                emit_video(f"⚠ Chapter detection timed out: {title}", "error")
-            else:
-                emit_video(f"⚠ No chapters ({str(last_exc)[:120] if last_exc else 'unknown error'}): {title}", "error")
-            time.sleep(0.3)
-            continue
-
-        chapters = [c for c in (_parse_chapter_line(line) for line in raw_chapters.splitlines()) if c]
-        if not chapters:
-            errors += 1
-            emit_video(f"⚠ Empty chapters: {title}", "error")
-            continue
-
-        result_videos.append({"id": video_id, "title": title, "duration": duration, "chapters": chapters})
+        result_videos.append(
+            {
+                "id": video_id,
+                "title": title,
+                "description": description,
+                "duration": meta.get("duration_string") or duration,
+                "uploaded": uploaded,
+                "source": source_label,
+                "searchable_text": searchable_text,
+            }
+        )
         indexed_ids.add(video_id)
         new_count += 1
         emit_video(title, "done")
@@ -664,8 +633,6 @@ def build_video_index(
         emit_status(
             f"Saved progress: {new_count} new, {skipped} skipped, {errors} errors, {len(result_videos)} total indexed"
         )
-
-        time.sleep(0.4)
 
     if new_count == 0:
         emit_status("No new videos found; channel_index.json unchanged")
@@ -685,6 +652,8 @@ def main() -> int:
     p_video = sub.add_parser("video", help="Refresh channel_index.json")
     p_video.add_argument("--base-dir", default=str(Path(__file__).parent), help="Workspace root containing channel_index.json")
     p_video.add_argument("--batch-size", type=int, default=50)
+    p_video.add_argument("--max-items", type=int, default=RECENT_MAX_ITEMS)
+    p_video.add_argument("--max-age-days", type=int, default=RECENT_MAX_AGE_DAYS)
     p_video.add_argument("--force", action="store_true")
 
     args = parser.parse_args()
@@ -713,6 +682,8 @@ def main() -> int:
         stats = build_video_index(
             base_dir,
             batch_size=args.batch_size,
+            max_items=args.max_items,
+            max_age_days=args.max_age_days,
             force=args.force,
             status_cb=lambda m: print(f"[status] {m}", flush=True),
             video_cb=lambda m, s: print(f"[video:{s}] {m}", flush=True),

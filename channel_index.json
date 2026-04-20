@@ -3530,5 +3530,61 @@
         "title": "debugger in new and novel ways like"
       }
     ]
+  },
+  {
+    "id": "ZhzbLhS3W90",
+    "title": "Dynatrace Agentic Workflows: Approvals, Agents, and Automation",
+    "duration": "46:19",
+    "chapters": [
+      {
+        "time": "0:00",
+        "seconds": 0,
+        "title": "Introduction"
+      },
+      {
+        "time": "0:01",
+        "seconds": 1,
+        "title": "[music]"
+      },
+      {
+        "time": "1:31",
+        "seconds": 91,
+        "title": "happening and then you can have a"
+      },
+      {
+        "time": "3:02",
+        "seconds": 182,
+        "title": "difference between a simple and the"
+      },
+      {
+        "time": "4:32",
+        "seconds": 272,
+        "title": "uh playlist on the bottom the different"
+      },
+      {
+        "time": "6:02",
+        "seconds": 362,
+        "title": "anything in terms of licensing. So the"
+      },
+      {
+        "time": "7:33",
+        "seconds": 453,
+        "title": "doesn't cost anything uh the workflow"
+      },
+      {
+        "time": "9:04",
+        "seconds": 544,
+        "title": "very very helpful uh picture to see so"
+      }
+    ]
+  },
+  {
+    "id": "-z19exqfVbE",
+    "title": "Build a Dynatrace App with AI in Minutes",
+    "description": "Explore how observability practitioners can build custom Dynatrace Apps beyond dashboards using AI coding agents and the Dynatrace App Toolkit. In this Observability Lab, Andi Grabner and Dani Coll walk through a hands-on example that turns Dynatrace data into a domain-specific application for detecting suspicious trades.\nYou’ll see how logs and business events ingested into Dynatrace can be transformed into an interactive app—without being a TypeScript or React expert—by combining AI agents, DQL, and the Dynatrace design system.\nIn this video, you’ll learn how to:\n- Build a Dynatrace App from scratch using the App Toolkit\n- Use AI coding agents to generate UI and backend logic\n- Query business events with Dynatrace Query Language (DQL)\n- Leverage Strato components for consistent UI design\n- Run apps locally and understand the deployment model\n- Use MCP servers to validate DQL queries and UI components\n- Extend observability beyond dashboards with domain knowledge\n\nThis session is ideal for SREs, DevOps engineers, platform teams, and Dynatrace administrators who want to prototype custom apps, validate ideas quickly, and deliver real operational value—without heavy development overhead.\n\n🔗 Useful links\nFirst app in 5 minutes: https://dt-url.net/fo03826\nAI for app development: https://dt-url.net/i423826\nDynatrace MCP Server: https://dt-url.net/mcp\nVSCode and Cursor Extensions: https://dt-url.net/1x638dt\nInside Dynatrace Apps Playlist: https://www.youtube.com/playlist?list=PLqt2rd0eew1bu5vGLUJ3pr2SgNpnpKb71\n\n📖 Chapters 📖\n00:00 – Welcome & Why Everyone Can Build Dynatrace Apps with AI\n00:45 – Demo Overview: A Custom Dynatrace App Beyond Dashboards\n03:39 – Getting Started: Tools, Editors & Prerequisites\n04:53 – Scaffolding a Dynatrace App with the App Toolkit\n06:56 – agents.md: Teaching AI How Dynatrace Works\n09:02 – First Run: Default App Pages Explained\n09:26 – Prompt-Driven App Development with AI\n12:00 – MCP in Action: How AI Finds DQL & Strato Components\n18:13 – First Working Version of the AI-Built App\n19:11 – Iterating the UI: Tables, Tabs & Sorting\n21:23 – Adding Detail Panels & Interactive Rows\n23:08 – Debugging with AI, MCP & Human Insight\n28:24 – MVP Results: Value Without Writing Code\n30:06 – What’s Next: Advanced UI, Maps & Deployment\n31:02 – Final Advice & Resources\n\n🔬 Have a question?\nVisit our community and connect with Dynatrace experts and users:\nhttps://dynatr.ac/3M0AzM6\n👉 Stay connected\nFacebook → https://facebook.com/dynatrace\nInstagram → https://instagram.com/dynatrace\nLinkedIn → https://linkedin.com/company/dynatrace\nBluesky → https://bsky.app/profile/dynatrace.com\nX → https://twitter.com/dynatrace\nTwitch → https://twitch.tv/dynatrace",
+    "duration": "32:12",
+    "uploaded": "20260414",
+    "source": "videos",
+    "searchable_text": "build a dynatrace app with ai in minutes explore how observability practitioners can build custom dynatrace apps beyond dashboards using ai coding agents and the dynatrace app toolkit. in this observability lab, andi grabner and dani coll walk through a hands-on example that turns dynatrace data into a domain-specific application for detecting suspicious trades.\nyou’ll see how logs and business events ingested into dynatrace can be transformed into an interactive app—without being a typescript or react expert—by combining ai agents, dql, and the dynatrace design system.\nin this video, you’ll learn how to:\n- build a dynatrace app from scratch using the app toolkit\n- use ai coding agents to generate ui and backend logic\n- query business events with dynatrace query language (dql)\n- leverage strato components for consistent ui design\n- run apps locally and understand the deployment model\n- use mcp servers to validate dql queries and ui components\n- extend observability beyond dashboards with domain knowledge\n\nthis session is ideal for sres, devops engineers, platform teams, and dynatrace administrators who want to prototype custom apps, validate ideas quickly, and deliver real operational value—without heavy development overhead.\n\n🔗 useful links\nfirst app in 5 minutes: https://dt-url.net/fo03826\nai for app development: https://dt-url.net/i423826\ndynatrace mcp server: https://dt-url.net/mcp\nvscode and cursor extensions: https://dt-url.net/1x638dt\ninside dynatrace apps playlist: https://www.youtube.com/playlist?list=plqt2rd0eew1bu5vgluj3pr2sgnpnpkb71\n\n📖 chapters 📖\n00:00 – welcome & why everyone can build dynatrace apps with ai\n00:45 – demo overview: a custom dynatrace app beyond dashboards\n03:39 – getting started: tools, editors & prerequisites\n04:53 – scaffolding a dynatrace app with the app toolkit\n06:56 – agents.md: teaching ai how dynatrace works\n09:02 – first run: default app pages explained\n09:26 – prompt-driven app development with ai\n12:00 – mcp in action: how ai finds dql & strato components\n18:13 – first working version of the ai-built app\n19:11 – iterating the ui: tables, tabs & sorting\n21:23 – adding detail panels & interactive rows\n23:08 – debugging with ai, mcp & human insight\n28:24 – mvp results: value without writing code\n30:06 – what’s next: advanced ui, maps & deployment\n31:02 – final advice & resources\n\n🔬 have a question?\nvisit our community and connect with dynatrace experts and users:\nhttps://dynatr.ac/3m0azm6\n👉 stay connected\nfacebook → https://facebook.com/dynatrace\ninstagram → https://instagram.com/dynatrace\nlinkedin → https://linkedin.com/company/dynatrace\nbluesky → https://bsky.app/profile/dynatrace.com\nx → https://twitter.com/dynatrace\ntwitch → https://twitch.tv/dynatrace"
   }
 ]

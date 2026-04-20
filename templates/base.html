@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevRel Toolbox</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+    <header class="site-header">
+        <svg class="dt-logo" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
+            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
+        </svg>
+        <div class="header-text">
+            <span class="brand">Dynatrace</span>
+            <span class="product-title">DevRel Toolbox</span>
+        </div>
+        <div class="header-actions">
+            <button type="button" id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="toolMenu">&#9776; Menu</button>
+            <div id="toolMenu" class="menu-drawer" hidden>
+                <div class="menu-links">
+                    <a href="https://live.standards.site/dynatrace/" target="_blank" rel="noopener" class="external-link">&#128278; Brand Guidelines</a>
+                    <a href="/devcontainer-builder">&#128736; Devcontainer Builder</a>
+                    <a href="/color-picker">&#127912; Color Picker</a>
+                    <a href="/code-cards">&#128248; Code Cards</a>
+                    <a href="/wordlist-manager">&#128221; Wordlist Manager</a>
+                    <a href="/navigator">&#128269; Video Navigator</a>
+                    <a href="/blog-navigator">&#128240; Blog Navigator</a>
+                    <a href="/webhook-tester">&#128255; Webhook Tester</a>
+                    <a href="/docs/index-refresh">&#128214; Index Refresh Docs</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-wrapper">
+
+        <!-- Feature 1: YouTube Subtitle Downloader -->
+        <div class="container">
+            <h1>📥 YouTube Subtitle Downloader</h1>
+            <p class="subtitle">Download automatic subtitles in SRT format</p>
+
+            <form id="urlForm">
+                <div class="form-group">
+                    <label for="youtubeUrl">YouTube URL</label>
+                    <input
+                        type="url"
+                        id="youtubeUrl"
+                        name="url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        required
+                    >
+                </div>
+
+                <button type="submit" id="submitBtn">Download Subtitles</button>
+                <div class="spinner" id="spinner"></div>
+            </form>
+
+            <div class="message" id="message"></div>
+            <div id="ytSummaryContainer" style="display:none; margin-top:20px;">
+                <div class="summary-box" id="ytSummaryContent"></div>
+            </div>
+        </div>
+
+        <!-- Feature 2: SRT Corrector -->
+        <div class="container">
+            <h1>✏️ SRT Corrector</h1>
+            <p class="subtitle">Fix spelling errors and domain-specific terms in SRT files</p>
+
+            <form id="srtForm">
+                <div class="form-group">
+                    <label for="srtFile">Upload SRT File</label>
+                    <input type="file" id="srtFile" accept=".srt" required>
+                </div>
+
+                <button type="submit" id="srtSubmitBtn">Correct SRT</button>
+                <div class="spinner" id="srtSpinner"></div>
+            </form>
+
+            <div class="message" id="srtMessage"></div>
+            <div id="summaryContainer" style="display:none">
+                <div class="summary-box" id="summaryContent"></div>
+            </div>
+        </div>
+
+        <!-- Feature 3: MP4 Transcriber -->
+        <div class="container">
+            <h1>🎬 MP4 Transcriber</h1>
+            <p class="subtitle">Upload an MP4, get a corrected SRT transcript</p>
+
+            <form id="mp4Form">
+                <div class="form-group">
+                    <label for="mp4File">Upload MP4 File</label>
+                    <input type="file" id="mp4File" accept=".mp4,video/mp4" required>
+                </div>
+
+                <button type="submit" id="mp4SubmitBtn">Transcribe</button>
+                <div class="spinner" id="mp4Spinner"></div>
+            </form>
+
+            <div class="message" id="mp4Message"></div>
+            <div id="mp4SummaryContainer" style="display:none">
+                <div class="summary-box" id="mp4SummaryContent"></div>
+            </div>
+        </div>
+
+        <!-- Feature 5: Highlight Reel -->
+        <div class="container">
+            <h1>🎞️ Highlight Reel</h1>
+            <p class="subtitle">Get an executive summary and GIF for specific video sections</p>
+
+            <form id="highlightForm">
+                <div class="form-group">
+                    <label for="highlightUrl">YouTube URL</label>
+                    <input type="url" id="highlightUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                </div>
+
+                <div class="form-group">
+                    <label>Timestamps</label>
+                    <div id="timestampList">
+                        <div class="timestamp-row">
+                            <input type="text" placeholder="Start (e.g. 1:30)" class="ts-start">
+                            <span style="color:#666; flex-shrink:0">&ndash;</span>
+                            <input type="text" placeholder="End (e.g. 2:15)" class="ts-end">
+                            <button type="button" class="remove-ts" style="display:none">&times;</button>
+                        </div>
+                    </div>
+                    <button type="button" id="addTimestamp" class="add-ts-btn">+ Add Timestamp</button>
+                </div>
+
+                <button type="submit" id="highlightSubmitBtn">Generate Highlight Reel</button>
+                <div class="spinner" id="highlightSpinner"></div>
+            </form>
+
+            <div class="message" id="highlightMessage"></div>
+            <div id="highlightStatusList" style="display:none; margin-top:12px; font-size:13px; color:#555;"></div>
+            <div id="highlightResultContainer" style="display:none; margin-top:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <strong style="font-size:13px; color:#444;">Executive Summary (Markdown)</strong>
+                    <button type="button" id="copySummaryBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
+                </div>
+                <textarea id="highlightSummary" readonly style="width:100%; min-height:180px; font-family:monospace; font-size:12px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
+                <div id="highlightGifContainer" style="margin-top:16px; text-align:center;"></div>
+            </div>
+        </div>
+
+        <!-- Feature 6: Chapter Detector -->
+        <div class="container">
+            <h1>&#128203; Chapter Detector</h1>
+            <p class="subtitle">Generate YouTube key moments from a video transcript</p>
+
+            <div style="display:flex; gap:0; margin-bottom:20px; border:2px solid #e0e0e0; border-radius:6px; overflow:hidden;">
+                <label id="chapterModeUrlLabel" style="flex:1; text-align:center; padding:9px; font-size:13px; font-weight:600; cursor:pointer; background:#1966FF; color:#fff; transition:background 0.2s;">
+                    <input type="radio" name="chapterMode" value="url" checked style="display:none;"> YouTube URL
+                </label>
+                <label id="chapterModeFileLabel" style="flex:1; text-align:center; padding:9px; font-size:13px; font-weight:600; cursor:pointer; background:#f8f9fa; color:#555; transition:background 0.2s;">
+                    <input type="radio" name="chapterMode" value="file" style="display:none;"> SRT File
+                </label>
+            </div>
+
+            <form id="chapterForm">
+                <div class="form-group" id="chapterUrlGroup">
+                    <label for="chapterUrl">YouTube URL</label>
+                    <input type="url" id="chapterUrl" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="form-group" id="chapterFileGroup" style="display:none;">
+                    <label for="chapterFile">Upload SRT File</label>
+                    <input type="file" id="chapterFile" accept=".srt">
+                </div>
+
+                <button type="submit" id="chapterSubmitBtn">Detect Chapters</button>
+                <div class="spinner" id="chapterSpinner"></div>
+            </form>
+
+            <div class="message" id="chapterMessage"></div>
+            <div id="chapterStatusList" style="display:none; margin-top:12px; font-size:13px; color:#555;"></div>
+            <div id="chapterResultContainer" style="display:none; margin-top:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <strong style="font-size:13px; color:#444;">Key Moments (paste into YouTube description)</strong>
+                    <button type="button" id="copyChaptersBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
+                </div>
+                <textarea id="chapterOutput" readonly style="width:100%; min-height:160px; font-family:monospace; font-size:13px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
+            </div>
+        </div>
+
+        <!-- Feature 8: Metadata Optimizer -->
+        <div class="container">
+            <h1>&#128269; Metadata Optimizer</h1>
+            <p class="subtitle">Investigate a YouTube video and get concrete metadata improvements</p>
+            <p style="margin-top:-6px; margin-bottom:16px; font-size:13px; color:#555;">
+                You may also like to try:
+                <a href="https://m365.cloud.microsoft/chat/?titleId=T_5c4d926f-fdc4-316f-d17f-198632a9720a" target="_blank" rel="noopener noreferrer"
+                   style="display:inline-block; margin-left:6px; padding:4px 12px; background:#0078d4; color:#fff; border-radius:20px; font-size:12px; font-weight:600; text-decoration:none; letter-spacing:0.3px;">
+                    &#10024; YouTube Optimizer M365 Agent
+                </a>
+            </p>
+
+            <form id="metadataForm">
+                <div class="form-group">
+                    <label for="metadataUrl">YouTube URL</label>
+                    <input type="url" id="metadataUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="metadataKeywords">Target keywords</label>
+                    <textarea id="metadataKeywords" rows="4" style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:6px; font-size:14px; resize:vertical;" placeholder="e.g. dynatrace tutorial, distributed tracing, observability"></textarea>
+                </div>
+
+                <button type="submit" id="metadataSubmitBtn">Investigate Metadata</button>
+                <div class="spinner" id="metadataSpinner"></div>
+            </form>
+
+            <div class="message" id="metadataMessage"></div>
+            <div id="metadataResultContainer" style="display:none; margin-top:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <strong style="font-size:13px; color:#444;">Recommended metadata plan (Markdown)</strong>
+                    <button type="button" id="copyMetadataBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
+                </div>
+                <textarea id="metadataOutput" readonly style="width:100%; min-height:260px; font-family:monospace; font-size:12px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
+            </div>
+        </div>
+
+        <!-- Feature 9: Devcontainer Builder -->
+        <div class="container">
+            <h1>&#128736; Devcontainer Builder</h1>
+            <p class="subtitle">Use the standalone wizard to choose features, configure options, and download a scaffold ZIP</p>
+
+            <div class="dcb-launch-card">
+                <p class="dcb-launch-copy">A dedicated page gives the builder more room for a proper next-next-next flow, richer summaries, and feature configuration without squeezing the main toolbox grid.</p>
+                <a class="dcb-launch-link" href="/devcontainer-builder">Open Devcontainer Builder</a>
+            </div>
+        </div>
+
+        <!-- Webhook Tester -->
+        <div class="container">
+            <h1>&#128255; Webhook Tester</h1>
+            <p class="subtitle">Local webhook endpoint for testing integrations</p>
+            <div class="dcb-launch-card">
+                <p class="dcb-launch-copy">Run a private webhook.site instance locally to receive, inspect, and debug HTTP requests without exposing a public endpoint.</p>
+                <a class="dcb-launch-link" href="/webhook-tester">Open Webhook Tester</a>
+            </div>
+        </div>
+
+        <!-- Feature 7: Primary Brand Colors -->
+        <div class="container">
+            <h1>&#127912; Primary Brand Colors</h1>
+            <p class="subtitle">Quick reference for core Dynatrace colors</p>
+
+            <div class="primary-color-tile">
+                <div class="primary-color-grid" aria-label="Primary Dynatrace colors">
+                    <button type="button" class="primary-color-swatch" data-name="Pink" data-hex="#BB0FD2" data-tooltip="Pink - #BB0FD2" title="Pink - #BB0FD2" aria-label="Pink #BB0FD2 copy hex">
+                        <div class="primary-color-chip" style="background:#BB0FD2;"></div>
+                        <div class="primary-color-label"><strong>Pink</strong><span>#BB0FD2</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Purple" data-hex="#5E29E5" data-tooltip="Purple - #5E29E5" title="Purple - #5E29E5" aria-label="Purple #5E29E5 copy hex">
+                        <div class="primary-color-chip" style="background:#5E29E5;"></div>
+                        <div class="primary-color-label"><strong>Purple</strong><span>#5E29E5</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Blue" data-hex="#1966FF" data-tooltip="Blue - #1966FF" title="Blue - #1966FF" aria-label="Blue #1966FF copy hex">
+                        <div class="primary-color-chip" style="background:#1966FF;"></div>
+                        <div class="primary-color-label"><strong>Blue</strong><span>#1966FF</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Turquoise" data-hex="#5DF2E0" data-tooltip="Turquoise - #5DF2E0" title="Turquoise - #5DF2E0" aria-label="Turquoise #5DF2E0 copy hex">
+                        <div class="primary-color-chip" style="background:#5DF2E0;"></div>
+                        <div class="primary-color-label"><strong>Turquoise</strong><span>#5DF2E0</span></div>
+                    </button>
+                    <button type="button" class="primary-color-swatch" data-name="Black" data-hex="#000000" data-tooltip="Black - #000000" title="Black - #000000" aria-label="Black #000000 copy hex">
+                        <div class="primary-color-chip" style="background:#000000;"></div>
+                        <div class="primary-color-label"><strong>Black</strong><span>#000000</span></div>
+                    </button>
+                </div>
+
+                <div id="primaryColorStatus" class="primary-color-status" aria-live="polite"></div>
+
+                <a class="color-picker-link" href="/color-picker">Open Full Color Picker</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/form-handlers.js"></script>
+</body>
+</html>

@@ -1,5 +1,58 @@
 [
   {
+    "title": "Achieving enhanced observability for Alibaba Cloud in multi-cloud environments with Dynatrace",
+    "url": "https://www.dynatrace.com/news/blog/achieving-enhanced-observability-for-alibaba-cloud-in-multi-cloud-environments-with-dynatrace/",
+    "published": "Tue, 14 Apr 2026 14:32:15 +0000",
+    "summary": "Multi-cloud architecture is now the norm. Each cloud brings unique strengths, and Alibaba Cloud often plays a key role for organizations with customers or operations in China and the broader Asia‑Pacific region. To make the most of the flexibility of multi-cloud environments, teams need a clear view of how their infras",
+    "image_url": "https://news.cdn.dm.dynatrace.com/wp-content/uploads/2026/04/Blog-OTP-23994_DT-extension-AI-observability_2x-300x169.png",
+    "categories": [
+      "Engineering",
+      "Observability",
+      "Partners",
+      "Alibaba Cloud",
+      "Multi-Cloud"
+    ]
+  },
+  {
+    "title": "Dynatrace Managed release notes version 1.336",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-managed-release-notes-version-1-336/",
+    "published": "Mon, 13 Apr 2026 07:32:02 +0000",
+    "summary": "We have released Dynatrace Managed version 1.336. To learn what’s new, have a look at the release notes . The post Dynatrace Managed release notes version 1.336 appeared first on Dynatrace news .",
+    "image_url": "https://news.cdn.dm.dynatrace.com/wp-content/uploads/2023/04/Managed_Release_notes_3-300x169.png",
+    "categories": [
+      "Product news",
+      "Release notes",
+      "Managed",
+      "What's new"
+    ]
+  },
+  {
+    "title": "What is APM? Application performance monitoring in a cloud-native world",
+    "url": "https://www.dynatrace.com/news/blog/what-is-apm/",
+    "published": "Thu, 05 Mar 2026 08:42:53 +0000",
+    "summary": "What is APM? Application performance monitoring (APM) is the practice of tracking key software application performance metrics using monitoring software and telemetry data. Practitioners use APM to ensure system availability, optimize service performance and response times, and improve user experiences. Research firm G",
+    "image_url": "https://news.cdn.dm.dynatrace.com/wp-content/uploads/2023/02/Blog_-INBI-Req_-What-is-APM_-high-res-version-2-1-300x169.png",
+    "categories": [
+      "Apps and microservices",
+      "application monitoring",
+      "application performance",
+      "application performance management",
+      "Application performance monitoring"
+    ]
+  },
+  {
+    "title": "Platform engineering success requires comprehensive observability",
+    "url": "https://www.dynatrace.com/news/blog/platform-engineering-success-requires-comprehensive-observability/",
+    "published": "Wed, 04 Mar 2026 13:18:17 +0000",
+    "summary": "Platform engineering has emerged as a critical discipline for organizations managing cloud-native complexity. However, building internal development platforms (IDPs) is only part of the challenge. Without comprehensive observability, even well-architected platforms can become operational blind spots that hinder develop",
+    "image_url": "https://news.cdn.dm.dynatrace.com/wp-content/uploads/2022/07/3d-futuristic-circuit-ba-300x158.jpg",
+    "categories": [
+      "Observability",
+      "observability",
+      "platform engineering"
+    ]
+  },
+  {
     "title": "Pipeline Groups in Dynatrace OpenPipeline: Enterprise-grade governance explained",
     "url": "https://www.dynatrace.com/news/blog/pipeline-groups-in-dynatrace-openpipeline-enterprise-grade-governance-explained/",
     "published": "Wed, 08 Apr 2026 23:11:32 +0000",

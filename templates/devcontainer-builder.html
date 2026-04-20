@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynatrace DevRel Toolbox - Devcontainer Builder</title>
+    <link rel="stylesheet" href="/static/css/devcontainer-builder.css">
+</head>
+<body>
+    <header>
+        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
+            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
+        </svg>
+        <div class="titles">
+            <span class="brand">Dynatrace</span>
+            <h1>Devcontainer Builder</h1>
+        </div>
+        <a href="/" class="back">&larr; Back to Toolbox</a>
+    </header>
+
+    <main class="content">
+        <section class="panel dcb-intro-card">
+            <div>
+                <span class="dcb-kicker">Composer mode</span>
+                <h2>Build in one pass.</h2>
+                <p>Pick an environment intent, tune only what matters, and generate a ready-to-use scaffold without hopping through step screens.</p>
+            </div>
+            <div class="dcb-intent-cards" aria-label="Environment intent presets">
+                <button type="button" class="dcb-intent-card" id="dcbPresetBase">
+                    <strong>Base Environment</strong>
+                    <span>General development with Docker and GitHub tooling.</span>
+                </button>
+                <button type="button" class="dcb-intent-card" id="dcbPresetK8s">
+                    <strong>Kubernetes Environment</strong>
+                    <span>Kind + kubectl + Helm defaults for cluster-oriented workflows.</span>
+                </button>
+            </div>
+        </section>
+
+        <div class="dcb-layout">
+            <section class="panel dcb-composer-panel">
+                <div id="dcbMessage" class="dcb-message" role="status" aria-live="polite"></div>
+
+                <section class="dcb-section">
+                    <div class="dcb-section-heading">
+                        <h3>Project basics</h3>
+                        <span>Always visible</span>
+                    </div>
+                    <div class="dcb-form-grid dcb-form-grid-two-up">
+                        <label class="dcb-field">
+                            <span>Container name</span>
+                            <input type="text" id="dcbName" placeholder="My Project Devcontainer" required>
+                            <small>This becomes the <code>name</code> field in <code>devcontainer.json</code>.</small>
+                        </label>
+                        <label class="dcb-field">
+                            <span>Base image</span>
+                            <input type="text" id="dcbBaseImage" value="ubuntu:noble">
+                            <small>Use any base image your team already trusts.</small>
+                        </label>
+                    </div>
+                    <div class="dcb-toggle-row">
+                        <label class="dcb-toggle-card">
+                            <input type="checkbox" id="dcbIncludeGitIgnore" checked>
+                            <div>
+                                <strong>Include .gitignore</strong>
+                                <span>Add a starter ignore file for local env files and Python cache.</span>
+                            </div>
+                        </label>
+                        <div class="dcb-static-note">
+                            <strong>README is always included</strong>
+                            <span>The scaffold always adds <code>.devcontainer/README.md</code>.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dcb-section">
+                    <div class="dcb-section-heading">
+                        <h3>Foundation (locked)</h3>
+                        <span>Included in every scaffold</span>
+                    </div>
+                    <div id="dcbFoundationList" class="dcb-foundation-list"></div>
+                </section>
+
+                <section class="dcb-section">
+                    <div class="dcb-section-heading">
+                        <h3>Add-ons (optional)</h3>
+                        <span id="dcbFeatureCount">0 selected</span>
+                    </div>
+
+                    <div class="dcb-addon-controls">
+                        <div class="dcb-quick-picks">
+                            <button type="button" class="dcb-quick-pick" data-feature-ref="ghcr.io/devcontainers/features/node:1">Node</button>
+                            <button type="button" class="dcb-quick-pick" data-feature-ref="ghcr.io/mpriscella/features/kind:1.0.1">Kind</button>
+                            <button type="button" class="dcb-quick-pick" data-feature-ref="ghcr.io/devcontainers/features/kubectl-helm-minikube:1">Kubectl + Helm</button>
+                            <button type="button" class="dcb-quick-pick" data-feature-ref="ghcr.io/agardnerIT/devcontainer-feature-dtctl/dtctl:1">dtctl</button>
+                        </div>
+                        <div class="dcb-feature-browser">
+                            <label class="dcb-field">
+                                <span>Search add-ons</span>
+                                <input type="text" id="dcbSearch" placeholder="node, kind, kubectl, helm, dtctl...">
+                            </label>
+                            <label class="dcb-recommended-toggle">
+                                <input type="checkbox" id="dcbRecommendedOnly">
+                                <span>Show recommended for selected profile</span>
+                            </label>
+                            <div class="dcb-select-row">
+                                <select id="dcbFeatureSelect" aria-label="Available optional features"></select>
+                                <button type="button" id="dcbAddFeatureBtn" class="dcb-primary-button dcb-inline-button">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <article id="dcbFeatureSpotlight" class="dcb-feature-spotlight"></article>
+
+                    <div id="dcbSelectedFeaturePills" class="dcb-feature-pill-list"></div>
+                </section>
+
+                <section class="dcb-section">
+                    <details id="dcbAdvancedDetails" class="dcb-advanced" open>
+                        <summary>Advanced settings</summary>
+                        <div class="dcb-advanced-grid">
+                            <label class="dcb-field">
+                                <span>Forward ports</span>
+                                <input type="text" id="dcbForwardPorts" placeholder="8080, 3000">
+                                <small>Comma-separated values, for example <code>8080,3000</code>.</small>
+                            </label>
+                            <label class="dcb-field">
+                                <span>postCreateCommand</span>
+                                <input type="text" id="dcbPostCreateCommand" placeholder="npm install">
+                            </label>
+                            <label class="dcb-field">
+                                <span>postAttachCommand</span>
+                                <input type="text" id="dcbPostAttachCommand" placeholder="npm run dev">
+                            </label>
+                        </div>
+                    </details>
+                </section>
+
+                <section class="dcb-section">
+                    <div class="dcb-section-heading">
+                        <h3>Feature options</h3>
+                        <span>Only for selected add-ons</span>
+                    </div>
+                    <div id="dcbConfigCards" class="dcb-config-card-list"></div>
+                </section>
+            </section>
+
+            <aside class="dcb-summary-panel">
+                <div class="panel dcb-summary-card">
+                    <span class="dcb-kicker">Live summary</span>
+                    <h3 id="dcbSummaryName">My Devcontainer</h3>
+                    <p id="dcbSummaryImage">Base image: ubuntu:noble</p>
+                    <div id="dcbSummaryFiles" class="dcb-summary-list"></div>
+                    <div class="dcb-section-heading">
+                        <h3>Feature stack</h3>
+                        <span id="dcbSummaryCount">0</span>
+                    </div>
+                    <div id="dcbSummaryFeatureList" class="dcb-summary-feature-list"></div>
+
+                    <details class="dcb-preview-drawer">
+                        <summary>Inspect devcontainer.json</summary>
+                        <textarea id="dcbPreview" class="dcb-preview" readonly spellcheck="false"></textarea>
+                        <button type="button" id="dcbCopyJson" class="dcb-link-button dcb-link-button-secondary">Copy JSON</button>
+                    </details>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="dcb-sticky-actions">
+        <div class="dcb-sticky-copy">
+            <strong>Ready to generate</strong>
+            <span id="dcbGenerateMeta">Foundation + 0 add-ons selected</span>
+        </div>
+        <div class="dcb-sticky-buttons">
+            <button type="button" id="dcbResetBtn" class="dcb-link-button dcb-link-button-secondary">Reset to preset</button>
+            <button type="button" id="dcbDownloadBtn" class="dcb-primary-button">Generate Devcontainer ZIP</button>
+        </div>
+        <div id="dcbSpinner" class="dcb-spinner" aria-hidden="true"></div>
+    </footer>
+
+    <script src="/static/js/devcontainer-builder.js"></script>
+</body>
+</html>

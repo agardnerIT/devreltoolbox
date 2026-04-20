@@ -2,12 +2,16 @@ import re
 import ssl
 import shutil
 import time
+import io
+import zipfile
 import uvicorn
 import asyncio
 import threading
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, JSONResponse
-from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader
+from pydantic import BaseModel, Field
 from loguru import logger
 import sys
 import subprocess
@@ -19,6 +23,7 @@ import uuid
 import urllib.request
 import urllib.error
 import socket
+from typing import Any
 
 # Configure loguru
 logger.remove()
@@ -78,6 +83,15 @@ def _subtitle_error_detail(stderr_text: str) -> str:
 
 app = FastAPI()
 
+# Mount static files for CSS, JS, and other assets
+static_path = BASE_DIR / "static"
+if static_path.exists():
+    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+# Setup Jinja2 templating
+templates_path = BASE_DIR / "templates"
+jinja_env = Environment(loader=FileSystemLoader(str(templates_path)))
+
 class YouTubeURL(BaseModel):
     url: str
 
@@ -96,2472 +110,250 @@ class MetadataInvestigationRequest(BaseModel):
     url: str
     keywords: str
 
-HTML_CONTENT = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevRel Toolbox</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 20px 40px;
-        }
-
-        .site-header {
-            width: 100%;
-            max-width: 1800px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            padding: 28px 0 24px;
-        }
-
-        .site-header .dt-logo {
-            width: 48px;
-            height: 48px;
-            flex-shrink: 0;
-            fill: #ffffff;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
-        }
-
-        .site-header .header-text {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-        }
-
-        .site-header .brand {
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.75);
-        }
-
-        .site-header .product-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.01em;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        .header-actions {
-            margin-left: auto;
-            position: relative;
-        }
-
-        .menu-toggle {
-            width: auto;
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.45);
-            background: rgba(255,255,255,0.14);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-        }
-
-        .menu-toggle:hover {
-            box-shadow: none;
-            transform: none;
-            background: rgba(255,255,255,0.24);
-        }
-
-        .menu-drawer {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            width: min(360px, calc(100vw - 40px));
-            background: rgba(255,255,255,0.96);
-            border-radius: 12px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.6);
-            padding: 16px;
-            z-index: 1200;
-        }
-
-        .menu-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .menu-links a {
-            display: inline-block;
-            padding: 8px 14px;
-            border-radius: 999px;
-            background: #eef3ff;
-            border: 1px solid #d8e2ff;
-            color: #243b7b;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .menu-links a:hover {
-            background: #e3ecff;
-        }
-
-        .external-link::after {
-            content: " ↗";
-            font-size: 12px;
-            font-weight: 700;
-            opacity: 0.9;
-        }
-
-        .page-wrapper {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(240px, 1fr));
-            gap: 16px;
-            width: 100%;
-            max-width: 1800px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 24px;
-            min-width: 0;
-            max-width: none;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 24px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        input[type="url"], input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        input[type="url"]:focus, input[type="file"]:focus {
-            outline: none;
-            border-color: #1966FF;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(25, 102, 255, 0.3);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .message {
-            margin-top: 20px;
-            padding: 12px;
-            border-radius: 6px;
-            display: none;
-            font-size: 14px;
-        }
-        
-        .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(25, 102, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #1966FF;
-            animation: spin 1s linear infinite;
-            margin: 10px auto 0;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .download-link {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-
-        .download-link:hover {
-            background-color: #218838;
-        }
-
-        .summary-box {
-            margin-top: 20px;
-            padding: 16px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 13px;
-            overflow-x: auto;
-        }
-
-        .summary-box h1 { font-size: 18px; margin-bottom: 12px; color: #333; }
-        .summary-box h2 { font-size: 15px; margin: 16px 0 8px; color: #444; }
-        .summary-box p  { margin-bottom: 8px; line-height: 1.5; }
-        .summary-box em { font-style: italic; }
-
-        .summary-box table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 8px;
-        }
-
-        .summary-box th, .summary-box td {
-            border: 1px solid #dee2e6;
-            padding: 6px 10px;
-            text-align: left;
-        }
-
-        .summary-box th { background: #e9ecef; font-weight: 600; }
-        .summary-box tr:nth-child(even) { background: #f2f2f2; }
-        .summary-box code {
-            background: #e9ecef;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-
-        .timestamp-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .timestamp-row input {
-            flex: 1;
-            min-width: 0;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .timestamp-row input:focus {
-            outline: none;
-            border-color: #1966FF;
-        }
-
-        .remove-ts {
-            width: auto !important;
-            padding: 6px 10px !important;
-            font-size: 13px !important;
-            background: #dc3545 !important;
-        }
-
-        .add-ts-btn {
-            width: auto;
-            padding: 8px 16px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-
-        .add-ts-btn:hover { background: #5a6268; }
-
-        .gif-preview {
-            max-width: 100%;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-            margin-top: 8px;
-        }
-
-        .primary-color-tile {
-            display: grid;
-            gap: 12px;
-        }
-
-        .primary-color-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .primary-color-swatch {
-            position: relative;
-            width: 100%;
-            padding: 0;
-            text-align: left;
-            cursor: pointer;
-            border: 1px solid #d8e2ff;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #fff;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-
-        .primary-color-swatch:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-        }
-
-        .primary-color-swatch:focus-visible {
-            outline: 3px solid rgba(25, 102, 255, 0.35);
-            outline-offset: 1px;
-        }
-
-        .primary-color-swatch::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            left: 50%;
-            bottom: calc(100% + 8px);
-            transform: translateX(-50%) translateY(4px);
-            background: rgba(20, 29, 62, 0.96);
-            color: #fff;
-            border-radius: 6px;
-            padding: 5px 8px;
-            font-size: 11px;
-            font-weight: 700;
-            line-height: 1.2;
-            white-space: nowrap;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.15s, transform 0.15s;
-            z-index: 3;
-        }
-
-        .primary-color-swatch:hover::after,
-        .primary-color-swatch:focus-visible::after {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .primary-color-chip {
-            height: 34px;
-            border-bottom: 1px solid rgba(0,0,0,0.08);
-        }
-
-        .primary-color-label {
-            padding: 6px;
-            display: grid;
-            gap: 2px;
-            font-size: 11px;
-            line-height: 1.2;
-            color: #2b3350;
-        }
-
-        .primary-color-label strong {
-            font-size: 11px;
-            font-weight: 700;
-            color: #1f2a46;
-        }
-
-        .primary-color-status {
-            min-height: 18px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #1f8b4c;
-        }
-
-        .primary-color-status.error {
-            color: #a23333;
-        }
-
-        .color-picker-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-        }
-
-        .color-picker-link:hover {
-            filter: brightness(1.04);
-        }
-
-        @media (max-width: 900px) {
-            .primary-color-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 520px) {
-            .primary-color-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 1500px) {
-            .page-wrapper {
-                grid-template-columns: repeat(3, minmax(260px, 1fr));
-            }
-        }
-
-        @media (max-width: 1080px) {
-            .page-wrapper {
-                grid-template-columns: repeat(2, minmax(260px, 1fr));
-            }
-        }
-
-        @media (max-width: 680px) {
-            .page-wrapper {
-                grid-template-columns: 1fr;
-            }
-
-            .menu-drawer {
-                width: min(340px, calc(100vw - 28px));
-                padding: 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header class="site-header">
-        <svg class="dt-logo" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
-            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
-        </svg>
-        <div class="header-text">
-            <span class="brand">Dynatrace</span>
-            <span class="product-title">DevRel Toolbox</span>
-        </div>
-        <div class="header-actions">
-            <button type="button" id="menuToggle" class="menu-toggle" aria-expanded="false" aria-controls="toolMenu">&#9776; Menu</button>
-            <div id="toolMenu" class="menu-drawer" hidden>
-                <div class="menu-links">
-                    <a href="https://live.standards.site/dynatrace/" target="_blank" rel="noopener" class="external-link">&#128278; Brand Guidelines</a>
-                    <a href="/color-picker">&#127912; Color Picker</a>
-                    <a href="/code-cards">&#128248; Code Cards</a>
-                    <a href="/wordlist-manager">&#128221; Wordlist Manager</a>
-                    <a href="/navigator">&#128269; Video Navigator</a>
-                    <a href="/blog-navigator">&#128240; Blog Navigator</a>
-                    <a href="/docs/index-refresh">&#128214; Index Refresh Docs</a>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="page-wrapper">
-
-        <!-- Feature 1: YouTube Subtitle Downloader -->
-        <div class="container">
-            <h1>📥 YouTube Subtitle Downloader</h1>
-            <p class="subtitle">Download automatic subtitles in SRT format</p>
-
-            <form id="urlForm">
-                <div class="form-group">
-                    <label for="youtubeUrl">YouTube URL</label>
-                    <input
-                        type="url"
-                        id="youtubeUrl"
-                        name="url"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        required
-                    >
-                </div>
-
-                <button type="submit" id="submitBtn">Download Subtitles</button>
-                <div class="spinner" id="spinner"></div>
-            </form>
-
-            <div class="message" id="message"></div>
-            <div id="ytSummaryContainer" style="display:none; margin-top:20px;">
-                <div class="summary-box" id="ytSummaryContent"></div>
-            </div>
-        </div>
-
-        <!-- Feature 2: SRT Corrector -->
-        <div class="container">
-            <h1>✏️ SRT Corrector</h1>
-            <p class="subtitle">Fix spelling errors and domain-specific terms in SRT files</p>
-
-            <form id="srtForm">
-                <div class="form-group">
-                    <label for="srtFile">Upload SRT File</label>
-                    <input type="file" id="srtFile" accept=".srt" required>
-                </div>
-
-                <button type="submit" id="srtSubmitBtn">Correct SRT</button>
-                <div class="spinner" id="srtSpinner"></div>
-            </form>
-
-            <div class="message" id="srtMessage"></div>
-            <div id="summaryContainer" style="display:none">
-                <div class="summary-box" id="summaryContent"></div>
-            </div>
-        </div>
-
-        <!-- Feature 3: MP4 Transcriber -->
-        <div class="container">
-            <h1>🎬 MP4 Transcriber</h1>
-            <p class="subtitle">Upload an MP4, get a corrected SRT transcript</p>
-
-            <form id="mp4Form">
-                <div class="form-group">
-                    <label for="mp4File">Upload MP4 File</label>
-                    <input type="file" id="mp4File" accept=".mp4,video/mp4" required>
-                </div>
-
-                <button type="submit" id="mp4SubmitBtn">Transcribe</button>
-                <div class="spinner" id="mp4Spinner"></div>
-            </form>
-
-            <div class="message" id="mp4Message"></div>
-            <div id="mp4SummaryContainer" style="display:none">
-                <div class="summary-box" id="mp4SummaryContent"></div>
-            </div>
-        </div>
-
-        <!-- Feature 5: Highlight Reel -->
-        <div class="container">
-            <h1>🎞️ Highlight Reel</h1>
-            <p class="subtitle">Get an executive summary and GIF for specific video sections</p>
-
-            <form id="highlightForm">
-                <div class="form-group">
-                    <label for="highlightUrl">YouTube URL</label>
-                    <input type="url" id="highlightUrl" placeholder="https://www.youtube.com/watch?v=..." required>
-                </div>
-
-                <div class="form-group">
-                    <label>Timestamps</label>
-                    <div id="timestampList">
-                        <div class="timestamp-row">
-                            <input type="text" placeholder="Start (e.g. 1:30)" class="ts-start">
-                            <span style="color:#666; flex-shrink:0">&ndash;</span>
-                            <input type="text" placeholder="End (e.g. 2:15)" class="ts-end">
-                            <button type="button" class="remove-ts" style="display:none">&times;</button>
-                        </div>
-                    </div>
-                    <button type="button" id="addTimestamp" class="add-ts-btn">+ Add Timestamp</button>
-                </div>
-
-                <button type="submit" id="highlightSubmitBtn">Generate Highlight Reel</button>
-                <div class="spinner" id="highlightSpinner"></div>
-            </form>
-
-            <div class="message" id="highlightMessage"></div>
-            <div id="highlightStatusList" style="display:none; margin-top:12px; font-size:13px; color:#555;"></div>
-            <div id="highlightResultContainer" style="display:none; margin-top:20px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                    <strong style="font-size:13px; color:#444;">Executive Summary (Markdown)</strong>
-                    <button type="button" id="copySummaryBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
-                </div>
-                <textarea id="highlightSummary" readonly style="width:100%; min-height:180px; font-family:monospace; font-size:12px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
-                <div id="highlightGifContainer" style="margin-top:16px; text-align:center;"></div>
-            </div>
-        </div>
-
-        <!-- Feature 6: Chapter Detector -->
-        <div class="container">
-            <h1>&#128203; Chapter Detector</h1>
-            <p class="subtitle">Generate YouTube key moments from a video transcript</p>
-
-            <div style="display:flex; gap:0; margin-bottom:20px; border:2px solid #e0e0e0; border-radius:6px; overflow:hidden;">
-                <label id="chapterModeUrlLabel" style="flex:1; text-align:center; padding:9px; font-size:13px; font-weight:600; cursor:pointer; background:#1966FF; color:#fff; transition:background 0.2s;">
-                    <input type="radio" name="chapterMode" value="url" checked style="display:none;"> YouTube URL
-                </label>
-                <label id="chapterModeFileLabel" style="flex:1; text-align:center; padding:9px; font-size:13px; font-weight:600; cursor:pointer; background:#f8f9fa; color:#555; transition:background 0.2s;">
-                    <input type="radio" name="chapterMode" value="file" style="display:none;"> SRT File
-                </label>
-            </div>
-
-            <form id="chapterForm">
-                <div class="form-group" id="chapterUrlGroup">
-                    <label for="chapterUrl">YouTube URL</label>
-                    <input type="url" id="chapterUrl" placeholder="https://www.youtube.com/watch?v=...">
-                </div>
-                <div class="form-group" id="chapterFileGroup" style="display:none;">
-                    <label for="chapterFile">Upload SRT File</label>
-                    <input type="file" id="chapterFile" accept=".srt">
-                </div>
-
-                <button type="submit" id="chapterSubmitBtn">Detect Chapters</button>
-                <div class="spinner" id="chapterSpinner"></div>
-            </form>
-
-            <div class="message" id="chapterMessage"></div>
-            <div id="chapterStatusList" style="display:none; margin-top:12px; font-size:13px; color:#555;"></div>
-            <div id="chapterResultContainer" style="display:none; margin-top:20px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                    <strong style="font-size:13px; color:#444;">Key Moments (paste into YouTube description)</strong>
-                    <button type="button" id="copyChaptersBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
-                </div>
-                <textarea id="chapterOutput" readonly style="width:100%; min-height:160px; font-family:monospace; font-size:13px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
-            </div>
-        </div>
-
-        <!-- Feature 8: Metadata Optimizer -->
-        <div class="container">
-            <h1>&#128269; Metadata Optimizer</h1>
-            <p class="subtitle">Investigate a YouTube video and get concrete metadata improvements</p>
-            <p style="margin-top:-6px; margin-bottom:16px; font-size:13px; color:#555;">
-                You may also like to try:
-                <a href="https://m365.cloud.microsoft/chat/?titleId=T_5c4d926f-fdc4-316f-d17f-198632a9720a" target="_blank" rel="noopener noreferrer"
-                   style="display:inline-block; margin-left:6px; padding:4px 12px; background:#0078d4; color:#fff; border-radius:20px; font-size:12px; font-weight:600; text-decoration:none; letter-spacing:0.3px;">
-                    &#10024; YouTube Optimizer M365 Agent
-                </a>
-            </p>
-
-            <form id="metadataForm">
-                <div class="form-group">
-                    <label for="metadataUrl">YouTube URL</label>
-                    <input type="url" id="metadataUrl" placeholder="https://www.youtube.com/watch?v=..." required>
-                </div>
-
-                <div class="form-group">
-                    <label for="metadataKeywords">Target keywords</label>
-                    <textarea id="metadataKeywords" rows="4" style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:6px; font-size:14px; resize:vertical;" placeholder="e.g. dynatrace tutorial, distributed tracing, observability"></textarea>
-                </div>
-
-                <button type="submit" id="metadataSubmitBtn">Investigate Metadata</button>
-                <div class="spinner" id="metadataSpinner"></div>
-            </form>
-
-            <div class="message" id="metadataMessage"></div>
-            <div id="metadataResultContainer" style="display:none; margin-top:20px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-                    <strong style="font-size:13px; color:#444;">Recommended metadata plan (Markdown)</strong>
-                    <button type="button" id="copyMetadataBtn" style="width:auto; padding:5px 12px; font-size:12px;">Copy</button>
-                </div>
-                <textarea id="metadataOutput" readonly style="width:100%; min-height:260px; font-family:monospace; font-size:12px; padding:10px; border:1px solid #dee2e6; border-radius:6px; resize:vertical; background:#f8f9fa;"></textarea>
-            </div>
-        </div>
-
-        <!-- Feature 7: Primary Brand Colors -->
-        <div class="container">
-            <h1>&#127912; Primary Brand Colors</h1>
-            <p class="subtitle">Quick reference for core Dynatrace colors</p>
-
-            <div class="primary-color-tile">
-                <div class="primary-color-grid" aria-label="Primary Dynatrace colors">
-                    <button type="button" class="primary-color-swatch" data-name="Pink" data-hex="#BB0FD2" data-tooltip="Pink - #BB0FD2" title="Pink - #BB0FD2" aria-label="Pink #BB0FD2 copy hex">
-                        <div class="primary-color-chip" style="background:#BB0FD2;"></div>
-                        <div class="primary-color-label"><strong>Pink</strong><span>#BB0FD2</span></div>
-                    </button>
-                    <button type="button" class="primary-color-swatch" data-name="Purple" data-hex="#5E29E5" data-tooltip="Purple - #5E29E5" title="Purple - #5E29E5" aria-label="Purple #5E29E5 copy hex">
-                        <div class="primary-color-chip" style="background:#5E29E5;"></div>
-                        <div class="primary-color-label"><strong>Purple</strong><span>#5E29E5</span></div>
-                    </button>
-                    <button type="button" class="primary-color-swatch" data-name="Blue" data-hex="#1966FF" data-tooltip="Blue - #1966FF" title="Blue - #1966FF" aria-label="Blue #1966FF copy hex">
-                        <div class="primary-color-chip" style="background:#1966FF;"></div>
-                        <div class="primary-color-label"><strong>Blue</strong><span>#1966FF</span></div>
-                    </button>
-                    <button type="button" class="primary-color-swatch" data-name="Turquoise" data-hex="#5DF2E0" data-tooltip="Turquoise - #5DF2E0" title="Turquoise - #5DF2E0" aria-label="Turquoise #5DF2E0 copy hex">
-                        <div class="primary-color-chip" style="background:#5DF2E0;"></div>
-                        <div class="primary-color-label"><strong>Turquoise</strong><span>#5DF2E0</span></div>
-                    </button>
-                    <button type="button" class="primary-color-swatch" data-name="Black" data-hex="#000000" data-tooltip="Black - #000000" title="Black - #000000" aria-label="Black #000000 copy hex">
-                        <div class="primary-color-chip" style="background:#000000;"></div>
-                        <div class="primary-color-label"><strong>Black</strong><span>#000000</span></div>
-                    </button>
-                </div>
-
-                <div id="primaryColorStatus" class="primary-color-status" aria-live="polite"></div>
-
-                <a class="color-picker-link" href="/color-picker">Open Full Color Picker</a>
-            </div>
-        </div>
-
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-        // Header menu overlay
-        const menuToggle = document.getElementById('menuToggle');
-        const toolMenu = document.getElementById('toolMenu');
-        const urlForm = document.getElementById('urlForm');
-        const message = document.getElementById('message');
-        const spinner = document.getElementById('spinner');
-        const submitBtn = document.getElementById('submitBtn');
-        const ytSummaryContainer = document.getElementById('ytSummaryContainer');
-        const ytSummaryContent = document.getElementById('ytSummaryContent');
-
-        function closeToolMenu() {
-            toolMenu.hidden = true;
-            menuToggle.setAttribute('aria-expanded', 'false');
-            menuToggle.textContent = '\u2630 Menu';
-        }
-
-        menuToggle.addEventListener('click', () => {
-            const opening = toolMenu.hidden;
-            toolMenu.hidden = !toolMenu.hidden;
-            menuToggle.setAttribute('aria-expanded', String(opening));
-            menuToggle.textContent = opening ? '\u2715 Close' : '\u2630 Menu';
-        });
-
-        document.addEventListener('click', (event) => {
-            if (toolMenu.hidden) return;
-            if (toolMenu.contains(event.target) || menuToggle.contains(event.target)) return;
-            closeToolMenu();
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !toolMenu.hidden) {
-                closeToolMenu();
-            }
-        });
-
-        function renderMarkdownSafe(input) {
-            if (typeof input !== 'string' || !input.trim()) {
-                return '<p><em>No summary available.</em></p>';
-            }
-            return marked.parse(input);
-        }
-
-        urlForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const url = document.getElementById('youtubeUrl').value.trim();
-            if (!url) return;
-
-            message.style.display = 'none';
-            message.innerHTML = '';
-            ytSummaryContainer.style.display = 'none';
-            ytSummaryContent.innerHTML = '';
-
-            spinner.style.display = 'block';
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Downloading...';
-
-            try {
-                const response = await fetch('/api/download-subtitles', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    message.className = 'message success';
-                    message.innerHTML = `✓ Subtitles downloaded and corrected! ${data.changes_count} change(s) made.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    ytSummaryContent.innerHTML = renderMarkdownSafe(data.summary);
-                    ytSummaryContainer.style.display = 'block';
-                    urlForm.reset();
-                } else {
-                    message.className = 'message error';
-                    message.textContent = '✗ Error: ' + (data.detail || 'Failed to download subtitles');
-                }
-            } catch (error) {
-                message.className = 'message error';
-                message.textContent = '✗ Error: ' + error.message;
-            } finally {
-                message.style.display = 'block';
-                spinner.style.display = 'none';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Download Subtitles';
-            }
-        });
-
-        srtForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const fileInput = document.getElementById('srtFile');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            srtMessage.style.display = 'none';
-            srtMessage.innerHTML = '';
-            summaryContainer.style.display = 'none';
-            summaryContent.innerHTML = '';
-
-            srtSpinner.style.display = 'block';
-            srtSubmitBtn.disabled = true;
-            srtSubmitBtn.textContent = 'Correcting...';
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch('/api/correct-srt', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    srtMessage.className = 'message success';
-                    srtMessage.innerHTML = `✓ Correction complete! ${data.changes_count} change(s) made.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    summaryContent.innerHTML = renderMarkdownSafe(data.summary);
-                    summaryContainer.style.display = 'block';
-                    srtForm.reset();
-                } else {
-                    srtMessage.className = 'message error';
-                    srtMessage.textContent = '✗ Error: ' + (data.detail || 'Failed to correct SRT');
-                }
-            } catch (error) {
-                srtMessage.className = 'message error';
-                srtMessage.textContent = '✗ Error: ' + error.message;
-            } finally {
-                srtMessage.style.display = 'block';
-                srtSpinner.style.display = 'none';
-                srtSubmitBtn.disabled = false;
-                srtSubmitBtn.textContent = 'Correct SRT';
-            }
-        });
-
-        // Feature 3: MP4 Transcriber
-        const mp4Form = document.getElementById('mp4Form');
-        const mp4Message = document.getElementById('mp4Message');
-        const mp4Spinner = document.getElementById('mp4Spinner');
-        const mp4SubmitBtn = document.getElementById('mp4SubmitBtn');
-        const mp4SummaryContainer = document.getElementById('mp4SummaryContainer');
-        const mp4SummaryContent = document.getElementById('mp4SummaryContent');
-
-        mp4Form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const fileInput = document.getElementById('mp4File');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            mp4Message.style.display = 'none';
-            mp4Message.innerHTML = '';
-            mp4SummaryContainer.style.display = 'none';
-            mp4SummaryContent.innerHTML = '';
-
-            mp4Spinner.style.display = 'block';
-            mp4SubmitBtn.disabled = true;
-            mp4SubmitBtn.textContent = 'Transcribing\u2026 (this may take a few minutes)';
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const response = await fetch('/api/transcribe-mp4', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    mp4Message.className = 'message success';
-                    mp4Message.innerHTML = `\u2713 Transcription complete! ${data.changes_count} wordlist correction(s) applied.<br><a href="${data.download_url}" class="download-link">📥 Download Corrected SRT</a>`;
-                    mp4SummaryContent.innerHTML = renderMarkdownSafe(data.summary);
-                    mp4SummaryContainer.style.display = 'block';
-                    mp4Form.reset();
-                } else {
-                    mp4Message.className = 'message error';
-                    mp4Message.textContent = '\u2717 Error: ' + (data.detail || 'Transcription failed');
-                }
-            } catch (error) {
-                mp4Message.className = 'message error';
-                mp4Message.textContent = '\u2717 Error: ' + error.message;
-            } finally {
-                mp4Message.style.display = 'block';
-                mp4Spinner.style.display = 'none';
-                mp4SubmitBtn.disabled = false;
-                mp4SubmitBtn.textContent = 'Transcribe';
-            }
-        });
-
-        // Feature 4: Wordlist Manager
-        const wordlistForm = document.getElementById('wordlistForm');
-        const wordlistMessage = document.getElementById('wordlistMessage');
-        const wordlistSubmitBtn = document.getElementById('wordlistSubmitBtn');
-        const wordlistTableContainer = document.getElementById('wordlistTableContainer');
-        const wordlistTableBody = document.querySelector('#wordlistTable tbody');
-
-        async function loadWordlist() {
-            if (!wordlistTableBody || !wordlistTableContainer) return;
-            try {
-                const resp = await fetch('/api/wordlist');
-                const data = await resp.json();
-                wordlistTableBody.innerHTML = '';
-                const entries = Object.entries(data.wordlist);
-                if (entries.length === 0) {
-                    wordlistTableContainer.style.display = 'none';
-                    return;
-                }
-                for (const [wrong, right] of entries) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${wrong}</td><td>${right}</td>`;
-                    wordlistTableBody.appendChild(tr);
-                }
-                wordlistTableContainer.style.display = 'block';
-            } catch {}
-        }
-
-        if (wordlistForm && wordlistMessage && wordlistSubmitBtn) {
-            wordlistForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const wrong = document.getElementById('wrongWord').value.trim();
-                const right = document.getElementById('rightWord').value.trim();
-                if (!wrong || !right) return;
-
-                wordlistMessage.style.display = 'none';
-                wordlistSubmitBtn.disabled = true;
-
-                try {
-                    const response = await fetch('/api/wordlist', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ wrong, right })
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        wordlistMessage.className = 'message success';
-                        wordlistMessage.textContent = `\u2713 Added: \"${wrong}\" \u2192 \"${right}\"${data.updated ? ' (updated existing entry)' : ''}`;
-                        wordlistForm.reset();
-                        loadWordlist();
-                    } else {
-                        wordlistMessage.className = 'message error';
-                        wordlistMessage.textContent = '\u2717 Error: ' + (data.detail || 'Failed to update wordlist');
-                    }
-                } catch (error) {
-                    wordlistMessage.className = 'message error';
-                    wordlistMessage.textContent = '\u2717 Error: ' + error.message;
-                } finally {
-                    wordlistMessage.style.display = 'block';
-                    wordlistSubmitBtn.disabled = false;
-                }
-            });
-
-            // Load wordlist on page open
-            loadWordlist();
-        }
-
-        // Feature 7: Primary Brand Colors
-        const primaryColorStatus = document.getElementById('primaryColorStatus');
-        const primaryColorSwatches = document.querySelectorAll('.primary-color-swatch');
-
-        async function copyPrimaryColorHex(hex) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(hex);
-                return;
-            }
-
-            const helper = document.createElement('textarea');
-            helper.value = hex;
-            helper.setAttribute('readonly', '');
-            helper.style.position = 'fixed';
-            helper.style.opacity = '0';
-            helper.style.pointerEvents = 'none';
-            document.body.appendChild(helper);
-            helper.select();
-            const copied = document.execCommand('copy');
-            document.body.removeChild(helper);
-
-            if (!copied) {
-                throw new Error('Clipboard unavailable in this browser context');
-            }
-        }
-
-        function setPrimaryColorStatus(kind, text) {
-            primaryColorStatus.className = kind === 'error' ? 'primary-color-status error' : 'primary-color-status';
-            primaryColorStatus.textContent = text;
-        }
-
-        primaryColorSwatches.forEach((swatch) => {
-            swatch.addEventListener('click', async () => {
-                const name = swatch.dataset.name || 'Color';
-                const hex = swatch.dataset.hex || '';
-                if (!hex) return;
-
-                try {
-                    await copyPrimaryColorHex(hex);
-                    setPrimaryColorStatus('success', 'Copied ' + name + ' ' + hex + ' to clipboard');
-                } catch (error) {
-                    setPrimaryColorStatus('error', 'Copy failed: ' + error.message);
-                }
-            });
-        });
-
-        // ── Feature 5: Highlight Reel ──────────────────────────────────────
-
-        function updateRemoveButtons() {
-            const rows = document.querySelectorAll('#timestampList .timestamp-row');
-            rows.forEach(row => {
-                row.querySelector('.remove-ts').style.display = rows.length > 1 ? 'inline-block' : 'none';
-            });
-        }
-
-        document.getElementById('timestampList').addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-ts')) {
-                e.target.closest('.timestamp-row').remove();
-                updateRemoveButtons();
-            }
-        });
-
-        document.getElementById('addTimestamp').addEventListener('click', () => {
-            const list = document.getElementById('timestampList');
-            const row = document.createElement('div');
-            row.className = 'timestamp-row';
-            row.innerHTML = '<input type="text" placeholder="Start (e.g. 1:30)" class="ts-start"><span style="color:#666; flex-shrink:0">&ndash;</span><input type="text" placeholder="End (e.g. 2:15)" class="ts-end"><button type="button" class="remove-ts">\u00d7</button>';
-            list.appendChild(row);
-            updateRemoveButtons();
-        });
-
-        const highlightForm = document.getElementById('highlightForm');
-        const highlightMessage = document.getElementById('highlightMessage');
-        const highlightSpinner = document.getElementById('highlightSpinner');
-        const highlightSubmitBtn = document.getElementById('highlightSubmitBtn');
-        const highlightResultContainer = document.getElementById('highlightResultContainer');
-        const highlightSummary = document.getElementById('highlightSummary');
-        const highlightGifContainer = document.getElementById('highlightGifContainer');
-        const highlightStatusList = document.getElementById('highlightStatusList');
-        const copySummaryBtn = document.getElementById('copySummaryBtn');
-
-        copySummaryBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(highlightSummary.value).then(() => {
-                copySummaryBtn.textContent = 'Copied!';
-                setTimeout(() => { copySummaryBtn.textContent = 'Copy'; }, 1500);
-            });
-        });
-
-        function addStatusLine(text, done = false) {
-            const el = document.createElement('div');
-            el.style.cssText = 'display:flex; align-items:center; gap:6px; padding:3px 0;';
-            el.innerHTML = done
-                ? '<span style="color:#28a745; font-weight:600;">&#10003;</span> ' + text
-                : '<span class="spinner" style="display:inline-block; width:12px; height:12px; border-width:2px; margin:0;"></span> ' + text;
-            highlightStatusList.appendChild(el);
-            highlightStatusList.style.display = 'block';
-            return el;
-        }
-
-        highlightForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const url = document.getElementById('highlightUrl').value;
-            const rows = document.querySelectorAll('#timestampList .timestamp-row');
-            const timestamps = [];
-            for (const row of rows) {
-                const start = row.querySelector('.ts-start').value.trim();
-                const end = row.querySelector('.ts-end').value.trim();
-                if (start && end) timestamps.push({ start, end });
-            }
-
-            if (timestamps.length === 0) {
-                highlightMessage.className = 'message error';
-                highlightMessage.textContent = '\u2717 Please enter at least one timestamp range';
-                highlightMessage.style.display = 'block';
-                return;
-            }
-
-            highlightMessage.style.display = 'none';
-            highlightMessage.innerHTML = '';
-            highlightResultContainer.style.display = 'none';
-            highlightSummary.value = '';
-            highlightGifContainer.innerHTML = '';
-            highlightStatusList.innerHTML = '';
-            highlightStatusList.style.display = 'none';
-
-            highlightSpinner.style.display = 'block';
-            highlightSubmitBtn.disabled = true;
-            highlightSubmitBtn.textContent = 'Generating\u2026';
-
-            let currentStatusEl = null;
-
-            try {
-                const response = await fetch('/api/highlight-reel', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, timestamps })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.detail || 'Request failed');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\\n');
-                    buffer = lines.pop();
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
-                        const event = JSON.parse(line.slice(6));
-                        if (event.type === 'status') {
-                            if (currentStatusEl) {
-                                // mark previous line done
-                                currentStatusEl.innerHTML = '<span style="color:#28a745; font-weight:600;">&#10003;</span> ' + currentStatusEl.dataset.text;
-                            }
-                            currentStatusEl = addStatusLine(event.message);
-                            currentStatusEl.dataset.text = event.message;
-                        } else if (event.type === 'done') {
-                            if (currentStatusEl) {
-                                currentStatusEl.innerHTML = '<span style="color:#28a745; font-weight:600;">&#10003;</span> ' + currentStatusEl.dataset.text;
-                            }
-                            highlightMessage.className = 'message success';
-                            highlightMessage.textContent = '\u2713 Highlight reel generated!';
-                            highlightMessage.style.display = 'block';
-                            highlightSummary.value = event.summary;
-                            highlightGifContainer.innerHTML = `<img src="${event.gif_url}" class="gif-preview" alt="Highlight GIF"><br><a href="${event.gif_url}" class="download-link" download>📥 Download GIF</a>`;
-                            highlightResultContainer.style.display = 'block';
-                        } else if (event.type === 'error') {
-                            throw new Error(event.detail);
-                        }
-                    }
-                }
-            } catch (error) {
-                if (currentStatusEl) {
-                    currentStatusEl.innerHTML = '<span style="color:#dc3545;">&#10007;</span> ' + currentStatusEl.dataset.text;
-                }
-                highlightMessage.className = 'message error';
-                highlightMessage.textContent = '\u2717 Error: ' + error.message;
-                highlightMessage.style.display = 'block';
-            } finally {
-                highlightSpinner.style.display = 'none';
-                highlightSubmitBtn.disabled = false;
-                highlightSubmitBtn.textContent = 'Generate Highlight Reel';
-            }
-        });
-
-        // ── Feature 6: Chapter Detector ────────────────────────────────────
-
-        const chapterForm = document.getElementById('chapterForm');
-        const chapterMessage = document.getElementById('chapterMessage');
-        const chapterSpinner = document.getElementById('chapterSpinner');
-        const chapterSubmitBtn = document.getElementById('chapterSubmitBtn');
-        const chapterResultContainer = document.getElementById('chapterResultContainer');
-        const chapterOutput = document.getElementById('chapterOutput');
-        const copyChaptersBtn = document.getElementById('copyChaptersBtn');
-        const chapterUrlGroup = document.getElementById('chapterUrlGroup');
-        const chapterFileGroup = document.getElementById('chapterFileGroup');
-        const chapterModeUrlLabel = document.getElementById('chapterModeUrlLabel');
-        const chapterModeFileLabel = document.getElementById('chapterModeFileLabel');
-        const chapterStatusList = document.getElementById('chapterStatusList');
-
-        function addChapterStatusLine(text) {
-            const el = document.createElement('div');
-            el.style.cssText = 'display:flex; align-items:center; gap:6px; padding:3px 0;';
-            el.innerHTML = '<span class="spinner" style="display:inline-block; width:12px; height:12px; border-width:2px; margin:0;"></span> ' + text;
-            el.dataset.text = text;
-            chapterStatusList.appendChild(el);
-            chapterStatusList.style.display = 'block';
-            return el;
-        }
-
-        function markChapterStatusDone(el) {
-            el.innerHTML = '<span style="color:#28a745; font-weight:600;">&#10003;</span> ' + el.dataset.text;
-        }
-
-        document.querySelectorAll('input[name="chapterMode"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                const isUrl = radio.value === 'url';
-                chapterUrlGroup.style.display = isUrl ? 'block' : 'none';
-                chapterFileGroup.style.display = isUrl ? 'none' : 'block';
-                chapterModeUrlLabel.style.cssText = isUrl
-                    ? 'flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:#1966FF;color:#fff;transition:background 0.2s;'
-                    : 'flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:#f8f9fa;color:#555;transition:background 0.2s;';
-                chapterModeFileLabel.style.cssText = isUrl
-                    ? 'flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:#f8f9fa;color:#555;transition:background 0.2s;'
-                    : 'flex:1;text-align:center;padding:9px;font-size:13px;font-weight:600;cursor:pointer;background:#1966FF;color:#fff;transition:background 0.2s;';
-            });
-        });
-
-        copyChaptersBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(chapterOutput.value).then(() => {
-                copyChaptersBtn.textContent = 'Copied!';
-                setTimeout(() => { copyChaptersBtn.textContent = 'Copy'; }, 1500);
-            });
-        });
-
-        chapterForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const mode = document.querySelector('input[name="chapterMode"]:checked').value;
-
-            chapterMessage.style.display = 'none';
-            chapterMessage.innerHTML = '';
-            chapterResultContainer.style.display = 'none';
-            chapterOutput.value = '';
-            chapterStatusList.innerHTML = '';
-            chapterStatusList.style.display = 'none';
-
-            chapterSpinner.style.display = 'block';
-            chapterSubmitBtn.disabled = true;
-            chapterSubmitBtn.textContent = 'Detecting\u2026';
-
-            let currentChapterStatusEl = null;
-
-            try {
-                let response;
-                if (mode === 'url') {
-                    const url = document.getElementById('chapterUrl').value;
-                    if (!url) throw new Error('Please enter a YouTube URL');
-                    response = await fetch('/api/detect-chapters', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url })
-                    });
-                } else {
-                    const fileInput = document.getElementById('chapterFile');
-                    if (!fileInput.files[0]) throw new Error('Please select an SRT file');
-                    const formData = new FormData();
-                    formData.append('file', fileInput.files[0]);
-                    response = await fetch('/api/detect-chapters-file', {
-                        method: 'POST',
-                        body: formData
-                    });
-                }
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.detail || 'Request failed');
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\\n');
-                    buffer = lines.pop();
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue;
-                        const event = JSON.parse(line.slice(6));
-                        if (event.type === 'status') {
-                            if (currentChapterStatusEl) markChapterStatusDone(currentChapterStatusEl);
-                            currentChapterStatusEl = addChapterStatusLine(event.message);
-                        } else if (event.type === 'done') {
-                            if (currentChapterStatusEl) markChapterStatusDone(currentChapterStatusEl);
-                            chapterOutput.value = event.chapters;
-                            chapterResultContainer.style.display = 'block';
-                            chapterMessage.className = 'message success';
-                            chapterMessage.textContent = '\u2713 Chapters detected!';
-                            chapterMessage.style.display = 'block';
-                        } else if (event.type === 'error') {
-                            throw new Error(event.detail);
-                        }
-                    }
-                }
-            } catch (error) {
-                if (currentChapterStatusEl) {
-                    currentChapterStatusEl.innerHTML = '<span style="color:#dc3545;">&#10007;</span> ' + currentChapterStatusEl.dataset.text;
-                }
-                chapterMessage.className = 'message error';
-                chapterMessage.textContent = '\u2717 Error: ' + error.message;
-                chapterMessage.style.display = 'block';
-            } finally {
-                chapterSpinner.style.display = 'none';
-                chapterSubmitBtn.disabled = false;
-                chapterSubmitBtn.textContent = 'Detect Chapters';
-            }
-        });
-
-        // Feature 8: Metadata Optimizer
-        const metadataForm = document.getElementById('metadataForm');
-        const metadataMessage = document.getElementById('metadataMessage');
-        const metadataSpinner = document.getElementById('metadataSpinner');
-        const metadataSubmitBtn = document.getElementById('metadataSubmitBtn');
-        const metadataResultContainer = document.getElementById('metadataResultContainer');
-        const metadataOutput = document.getElementById('metadataOutput');
-        const copyMetadataBtn = document.getElementById('copyMetadataBtn');
-
-        if (copyMetadataBtn) {
-            copyMetadataBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(metadataOutput.value).then(() => {
-                    copyMetadataBtn.textContent = 'Copied!';
-                    setTimeout(() => { copyMetadataBtn.textContent = 'Copy'; }, 1500);
-                });
-            });
-        }
-
-        if (metadataForm) {
-            metadataForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const url = document.getElementById('metadataUrl').value.trim();
-                const keywords = document.getElementById('metadataKeywords').value.trim();
-                if (!url || !keywords) {
-                    metadataMessage.className = 'message error';
-                    metadataMessage.textContent = '\u2717 Please enter both a YouTube URL and target keywords';
-                    metadataMessage.style.display = 'block';
-                    return;
-                }
-
-                metadataMessage.style.display = 'none';
-                metadataMessage.innerHTML = '';
-                metadataResultContainer.style.display = 'none';
-                metadataOutput.value = '';
-
-                metadataSpinner.style.display = 'block';
-                metadataSubmitBtn.disabled = true;
-                metadataSubmitBtn.textContent = 'Investigating\u2026';
-
-                try {
-                    const response = await fetch('/api/metadata-recommendations', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url, keywords })
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) {
-                        throw new Error(data.detail || 'Metadata investigation failed');
-                    }
-
-                    metadataOutput.value = data.markdown || '';
-                    metadataResultContainer.style.display = 'block';
-
-                    metadataMessage.className = 'message success';
-                    if (data.subtitle_warning) {
-                        metadataMessage.textContent = '\u2713 Recommendations generated. Note: ' + data.subtitle_warning;
-                    } else {
-                        metadataMessage.textContent = '\u2713 Recommendations generated';
-                    }
-                    metadataMessage.style.display = 'block';
-                } catch (error) {
-                    metadataMessage.className = 'message error';
-                    metadataMessage.textContent = '\u2717 Error: ' + error.message;
-                    metadataMessage.style.display = 'block';
-                } finally {
-                    metadataSpinner.style.display = 'none';
-                    metadataSubmitBtn.disabled = false;
-                    metadataSubmitBtn.textContent = 'Investigate Metadata';
-                }
-            });
-        }
-
-    </script>
-</body>
-</html>
-"""
-
-COLOR_PICKER_CORE_COLORS = {
-    "Pink": "#BB0FD2",
-    "Purple": "#5E29E5",
-    "Blue": "#1966FF",
-    "Turquoise": "#5DF2E0",
-    "Black": "#000000",
-}
-
-DT_LOGO_PATH = """<path d=\"M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z\"/>"""
-
-STANDARD_TOOL_PAGE_BASE_CSS = """
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-    font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-    min-height: 100vh;
-}
-
-header {
-    background: rgba(0,0,0,0.25);
-    backdrop-filter: blur(8px);
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-header svg { width: 32px; height: 32px; fill: #fff; flex-shrink: 0; }
-
-header .titles { flex: 1; display: flex; flex-direction: column; line-height: 1.1; }
-
-header .brand {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.65);
-}
-
-header h1 { font-size: 18px; font-weight: 700; color: #fff; }
-
-header a.back {
-    color: rgba(255,255,255,0.75);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 5px 14px;
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 20px;
-    transition: background 0.2s;
-}
-
-header a.back:hover { background: rgba(255,255,255,0.15); }
-
-.external-link::after {
-    content: " ↗";
-    font-size: 12px;
-    font-weight: 700;
-    opacity: 0.9;
-}
-
-.content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px 32px 48px;
-    display: grid;
-    gap: 16px;
-}
-
-.panel {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-    padding: 16px;
-}
-
-.subtitle {
-    color: #666;
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
-label {
-    display: block;
-    color: #333;
-    font-weight: 600;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-input[type="text"]:focus {
-    outline: none;
-    border-color: #1966FF;
-}
-
-button {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.message {
-    margin-top: 12px;
-    padding: 12px;
-    border-radius: 6px;
-    display: none;
-    font-size: 14px;
-}
-
-.message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-@media (max-width: 700px) {
-    header { padding: 14px 12px; }
-    .content { padding: 16px 12px 36px; }
-}
-"""
-
-
-def build_standard_tool_page(
-    page_title: str,
-    page_heading: str,
-    body_html: str,
-    script_html: str,
-    extra_css: str = "",
-    head_html: str = "",
-) -> str:
-    return (
-        "<!DOCTYPE html>\n"
-        "<html lang=\"en\">\n"
-        "<head>\n"
-        "    <meta charset=\"UTF-8\">\n"
-        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-        f"    <title>{page_title}</title>\n"
-        f"{head_html}\n"
-        "    <style>\n"
-        f"{STANDARD_TOOL_PAGE_BASE_CSS}\n"
-        f"{extra_css}\n"
-        "    </style>\n"
-        "</head>\n"
-        "<body>\n"
-        "    <header>\n"
-        "        <svg role=\"img\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Dynatrace\">\n"
-        f"            {DT_LOGO_PATH}\n"
-        "        </svg>\n"
-        "        <div class=\"titles\">\n"
-        "            <span class=\"brand\">Dynatrace</span>\n"
-        f"            <h1>{page_heading}</h1>\n"
-        "        </div>\n"
-        "        <a href=\"/\" class=\"back\">&larr; Back to Toolbox</a>\n"
-        "    </header>\n"
-        "\n"
-        f"{body_html}\n"
-        "\n"
-        f"{script_html}\n"
-        "</body>\n"
-        "</html>\n"
-    )
-
-
-COLOR_PICKER_EXTRA_CSS = f"""
-.intro p {{ color: #2b3350; font-size: 14px; line-height: 1.5; }}
-.intro a {{ color: #2f5ac6; font-weight: 600; }}
-
-.grid {{
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-}}
-
-.color-btn {{
-    border: 1px solid #dfe4f4;
-    border-radius: 10px;
-    background: #fff;
-    padding: 10px;
-    cursor: pointer;
-    text-align: left;
-    display: grid;
-    gap: 8px;
-    transition: transform 0.15s, box-shadow 0.15s;
-}}
-
-.color-btn:hover {{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }}
-.color-btn:focus-visible {{ outline: 3px solid rgba(102,126,234,0.35); outline-offset: 1px; }}
-
-.swatch {{
-    width: 100%;
-    aspect-ratio: 16/9;
-    border-radius: 7px;
-    border: 1px solid rgba(0,0,0,0.15);
-}}
-
-.color-title {{ font-size: 13px; font-weight: 700; color: #1f2a46; }}
-.color-hex {{ font-family: monospace; font-size: 12px; color: #5a6277; font-weight: 700; }}
-
-.selection {{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }}
-.selection-swatch {{ width: 56px; height: 56px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2); background: {COLOR_PICKER_CORE_COLORS["Blue"]}; }}
-.selection h2 {{ font-size: 18px; color: #1a1a1a; }}
-.selection p {{ font-size: 13px; color: #4c556a; }}
-.selection .hex {{ font-family: monospace; font-weight: 700; color: #1d315f; }}
-
-.status {{ min-height: 18px; margin-top: 8px; font-size: 13px; font-weight: 700; }}
-.status.success {{ color: #1f8b4c; }}
-.status.error {{ color: #a23333; }}
-
-.resources h3 {{ font-size: 15px; color: #273a72; margin-bottom: 8px; }}
-.resources ul {{ margin-left: 18px; display: grid; gap: 5px; }}
-.resources a {{ color: #2f5ac6; }}
-
-@media (max-width: 1200px) {{ .grid {{ grid-template-columns: repeat(4, 1fr); }} }}
-@media (max-width: 900px)  {{ .grid {{ grid-template-columns: repeat(3, 1fr); }} }}
-@media (max-width: 600px)  {{ .grid {{ grid-template-columns: repeat(2, 1fr); }} }}
-@media (max-width: 380px)  {{ .grid {{ grid-template-columns: 1fr; }} }}
-"""
-
-COLOR_PICKER_BODY_HTML = f"""
-<main class="content">
-    <section class="panel intro">
-        <p>
-            Use this page to quickly copy official core HEX values and jump to brand resources.
-            Official brand font: DT Flow.
-            <a href="https://brandfolder.com/s/txmgg9cs6nr55c9rptrrww7x" target="_blank" rel="noopener">Get DT Flow from Brandfolder</a>.
-        </p>
-    </section>
-
-    <section class="panel">
-        <div class="grid" id="coreColorGrid"></div>
-    </section>
-
-    <section class="panel" aria-live="polite" aria-atomic="true">
-        <div class="selection">
-            <div class="selection-swatch" id="selectionSwatch"></div>
-            <div class="selection-meta">
-                <h2 id="selectionName">Blue</h2>
-                <p>Current HEX: <span class="hex" id="selectionHex">{COLOR_PICKER_CORE_COLORS["Blue"]}</span></p>
-            </div>
-        </div>
-        <div class="status" id="statusMessage"></div>
-    </section>
-
-    <section class="panel resources" aria-label="Brand resources">
-        <h3>Useful Brand Links</h3>
-        <ul>
-            <li><a href="https://live.standards.site/dynatrace/" target="_blank" rel="noopener" class="external-link">Dynatrace Brand Guidelines</a></li>
-            <li><a href="https://cdn.dm.dynatrace.com/assets/documents/media-kit/dynatrace-logo-presskit.zip" target="_blank" rel="noopener" class="external-link">Dynatrace Logo Press Kit (ZIP)</a></li>
-            <li><a href="https://live.standards.site/dynatrace/color" target="_blank" rel="noopener" class="external-link">Dynatrace Color Guidelines</a></li>
-        </ul>
-    </section>
-</main>
-"""
-
-COLOR_PICKER_SCRIPT = f"""
-<script>
-    const coreColors = [
-        {{ name: 'Pink', hex: '{COLOR_PICKER_CORE_COLORS["Pink"]}' }},
-        {{ name: 'Purple', hex: '{COLOR_PICKER_CORE_COLORS["Purple"]}' }},
-        {{ name: 'Blue', hex: '{COLOR_PICKER_CORE_COLORS["Blue"]}' }},
-        {{ name: 'Turquoise', hex: '{COLOR_PICKER_CORE_COLORS["Turquoise"]}' }},
-        {{ name: 'Black', hex: '{COLOR_PICKER_CORE_COLORS["Black"]}' }},
-    ];
-
-    const grid = document.getElementById('coreColorGrid');
-    const statusMessage = document.getElementById('statusMessage');
-    const selectionSwatch = document.getElementById('selectionSwatch');
-    const selectionName = document.getElementById('selectionName');
-    const selectionHex = document.getElementById('selectionHex');
-
-    function setSelection(color) {{
-        selectionName.textContent = color.name;
-        selectionHex.textContent = color.hex;
-        selectionSwatch.style.background = color.hex;
-    }}
-
-    async function copyHex(hex) {{
-        if (navigator.clipboard && navigator.clipboard.writeText) {{
-            await navigator.clipboard.writeText(hex);
-            return;
-        }}
-
-        const helper = document.createElement('textarea');
-        helper.value = hex;
-        helper.setAttribute('readonly', '');
-        helper.style.position = 'fixed';
-        helper.style.opacity = '0';
-        helper.style.pointerEvents = 'none';
-        document.body.appendChild(helper);
-        helper.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(helper);
-
-        if (!copied) {{
-            throw new Error('Clipboard unavailable in this browser context');
-        }}
-    }}
-
-    function updateStatus(kind, text) {{
-        statusMessage.className = 'status ' + kind;
-        statusMessage.textContent = text;
-    }}
-
-    function createColorButton(color) {{
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'color-btn';
-        btn.setAttribute('aria-label', color.name + ' ' + color.hex + ' copy hex');
-        btn.innerHTML =
-            '<span class="swatch" style="background:' + color.hex + '"></span>' +
-            '<span class="color-title">' + color.name + '</span>' +
-            '<span class="color-hex">' + color.hex + '</span>';
-
-        btn.addEventListener('click', async () => {{
-            try {{
-                await copyHex(color.hex);
-                setSelection(color);
-                updateStatus('success', 'Copied ' + color.hex + ' to clipboard');
-            }} catch (error) {{
-                updateStatus('error', 'Copy failed: ' + error.message);
-            }}
-        }});
-
-        return btn;
-    }}
-
-    coreColors.forEach(color => grid.appendChild(createColorButton(color)));
-    setSelection(coreColors[2]);
-</script>
-"""
-
-COLOR_PICKER_HTML = build_standard_tool_page(
-    "Dynatrace DevRel Toolbox - Brand Color Picker",
-    "Brand Color Picker",
-    COLOR_PICKER_BODY_HTML,
-    COLOR_PICKER_SCRIPT,
-    COLOR_PICKER_EXTRA_CSS,
-)
-
-WORDLIST_MANAGER_EXTRA_CSS = """
-.content {
-    grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
-}
-
-.panel h2 {
-    color: #1d2c57;
-    font-size: 18px;
-    margin-bottom: 8px;
-}
-
-.form-group { margin-bottom: 14px; }
-
-.table-wrap {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    overflow: hidden;
-    display: none;
-    max-height: 600px;
-    overflow-y: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    border-bottom: 1px solid #e9ecef;
-    padding: 8px 10px;
-    text-align: left;
-    font-size: 13px;
-    word-break: break-word;
-}
-
-th {
-    position: sticky;
-    top: 0;
-    background: #f3f5f8;
-    font-weight: 700;
-}
-
-@media (max-width: 980px) {
-    .content {
-        grid-template-columns: 1fr;
-    }
-}
-"""
-
-WORDLIST_MANAGER_BODY_HTML = """
-<main class="content">
-    <section class="panel">
-        <h2>Manage Corrections</h2>
-        <p class="subtitle">Add or update correction entries in the wordlist</p>
-
-        <form id="wordlistForm">
-            <div class="form-group">
-                <label for="wrongWord">Incorrect word / phrase</label>
-                <input type="text" id="wrongWord" placeholder="e.g. dinatrace" required>
-            </div>
-            <div class="form-group">
-                <label for="rightWord">Correct replacement</label>
-                <input type="text" id="rightWord" placeholder="e.g. Dynatrace" required>
-            </div>
-            <button type="submit" id="wordlistSubmitBtn">Add to Wordlist</button>
-        </form>
-
-        <div class="message" id="wordlistMessage"></div>
-    </section>
-
-    <section class="panel">
-        <h2>Current Wordlist</h2>
-        <p class="subtitle">Existing typo-to-correction mappings</p>
-        <div id="wordlistTableContainer" class="table-wrap">
-            <table id="wordlistTable">
-                <thead><tr><th>Incorrect</th><th>Corrected</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </section>
-</main>
-"""
-
-WORDLIST_MANAGER_SCRIPT = """
-<script>
-    const wordlistForm = document.getElementById('wordlistForm');
-    const wordlistMessage = document.getElementById('wordlistMessage');
-    const wordlistSubmitBtn = document.getElementById('wordlistSubmitBtn');
-    const wordlistTableContainer = document.getElementById('wordlistTableContainer');
-    const wordlistTableBody = document.querySelector('#wordlistTable tbody');
-
-    async function loadWordlist() {
-        try {
-            const resp = await fetch('/api/wordlist');
-            const data = await resp.json();
-            wordlistTableBody.innerHTML = '';
-            const entries = Object.entries(data.wordlist);
-            if (entries.length === 0) {
-                wordlistTableContainer.style.display = 'none';
-                return;
-            }
-            for (const [wrong, right] of entries) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td>' + wrong + '</td><td>' + right + '</td>';
-                wordlistTableBody.appendChild(tr);
-            }
-            wordlistTableContainer.style.display = 'block';
-        } catch (error) {
-            wordlistMessage.className = 'message error';
-            wordlistMessage.textContent = '✗ Error: ' + error.message;
-            wordlistMessage.style.display = 'block';
-        }
+
+class DevcontainerFeatureOption(BaseModel):
+    type: str
+    default: Any = None
+    proposals: list[str] = Field(default_factory=list)
+    description: str = ""
+
+
+class DevcontainerFeatureCatalogItem(BaseModel):
+    id: str
+    displayName: str
+    maintainer: str
+    reference: str
+    documentationURL: str
+    description: str
+    options: dict[str, DevcontainerFeatureOption] = Field(default_factory=dict)
+
+
+class DevcontainerSelectedFeature(BaseModel):
+    reference: str
+    options: dict[str, Any] = Field(default_factory=dict)
+
+
+DEVCONTAINER_BUILDER_FILES_DIR = BASE_DIR / "devcontainer-builder-files"
+
+
+class DevcontainerBuildRequest(BaseModel):
+    name: str
+    profile: str = "base"
+    baseImage: str = "ubuntu:noble"
+    features: list[DevcontainerSelectedFeature] = Field(default_factory=list)
+    includeGitIgnore: bool = True
+    forwardPorts: list[int] = Field(default_factory=list)
+    portsAttributes: dict[str, dict[str, str]] = Field(default_factory=dict)
+    hostRequirements: dict[str, Any] = Field(default_factory=dict)
+    postCreateCommand: str = ""
+    postAttachCommand: str = ""
+    secrets: dict[str, dict[str, str]] = Field(default_factory=dict)
+
+
+def render_template_html(template_name: str) -> str:
+    template = jinja_env.get_template(template_name)
+    return template.render()
+
+
+DEVCONTAINER_FEATURE_CATALOG_FILE = BASE_DIR / "devcontainer_feature_catalog.json"
+
+
+def _load_devcontainer_feature_catalog() -> list[DevcontainerFeatureCatalogItem]:
+    if not DEVCONTAINER_FEATURE_CATALOG_FILE.exists():
+        logger.warning("Devcontainer feature catalog file not found")
+        return []
+
+    try:
+        raw = json.loads(DEVCONTAINER_FEATURE_CATALOG_FILE.read_text(encoding="utf-8"))
+        items = raw.get("features", [])
+        return [DevcontainerFeatureCatalogItem(**item) for item in items]
+    except Exception as exc:
+        logger.error(f"Failed to load devcontainer feature catalog: {str(exc)}")
+        return []
+
+
+DEVCONTAINER_FEATURES = _load_devcontainer_feature_catalog()
+DEVCONTAINER_FEATURE_BY_REF = {feature.reference: feature for feature in DEVCONTAINER_FEATURES}
+
+MANDATORY_FEATURE_REFS = [
+    "ghcr.io/devcontainers/features/docker-in-docker:2.16.1",
+    "ghcr.io/devcontainers/features/github-cli:1.1.0",
+    "ghcr.io/devcontainers/features/python:1.8.0",
+    "ghcr.io/devcontainers-extra/features/wget-apt-get:1.0.17",
+]
+
+
+def _sanitize_devcontainer_name(raw_name: str) -> str:
+    name = (raw_name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Container name is required")
+
+    clean = re.sub(r"[^a-zA-Z0-9._ -]", "_", name)
+    clean = re.sub(r"\s+", " ", clean).strip()
+    if not clean:
+        raise HTTPException(status_code=400, detail="Container name is invalid")
+    if len(clean) > 80:
+        clean = clean[:80].rstrip()
+    return clean
+
+
+def _coerce_feature_option_value(option_name: str, option_meta: DevcontainerFeatureOption, value: Any) -> Any:
+    if option_meta.type == "boolean":
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"true", "1", "yes", "on"}:
+                return True
+            if normalized in {"false", "0", "no", "off"}:
+                return False
+        raise HTTPException(status_code=400, detail=f"Invalid boolean value for option '{option_name}'")
+
+    if option_meta.type == "string":
+        if isinstance(value, str):
+            return value.strip()
+        if value is None:
+            return ""
+        return str(value)
+
+    return value
+
+
+def _validate_selected_features(features: list[DevcontainerSelectedFeature]) -> dict[str, dict[str, Any]]:
+    if len(features) > 25:
+        raise HTTPException(status_code=400, detail="Too many selected features (max 25)")
+
+    assembled: dict[str, dict[str, Any]] = {}
+    for selected in features:
+        ref = (selected.reference or "").strip()
+        if not ref:
+            raise HTTPException(status_code=400, detail="Feature reference is required")
+        if ref in assembled:
+            raise HTTPException(status_code=400, detail=f"Duplicate feature selected: {ref}")
+
+        catalog_item = DEVCONTAINER_FEATURE_BY_REF.get(ref)
+        if not catalog_item:
+            raise HTTPException(status_code=400, detail=f"Unknown feature reference: {ref}")
+
+        provided_options = selected.options or {}
+        validated_options: dict[str, Any] = {}
+
+        for provided_name, provided_value in provided_options.items():
+            if provided_name not in catalog_item.options:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown option '{provided_name}' for feature '{ref}'",
+                )
+            option_meta = catalog_item.options[provided_name]
+            validated_options[provided_name] = _coerce_feature_option_value(
+                provided_name,
+                option_meta,
+                provided_value,
+            )
+
+        assembled[ref] = validated_options
+
+    return assembled
+
+
+def _default_feature_options(reference: str) -> dict[str, Any]:
+    catalog_item = DEVCONTAINER_FEATURE_BY_REF.get(reference)
+    if not catalog_item:
+        return {}
+
+    defaults: dict[str, Any] = {}
+    for option_name, option_meta in catalog_item.options.items():
+        defaults[option_name] = _coerce_feature_option_value(option_name, option_meta, option_meta.default)
+    return defaults
+
+
+def _apply_mandatory_features(selected_features: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    merged = dict(selected_features)
+    for reference in MANDATORY_FEATURE_REFS:
+        if reference not in merged and reference in DEVCONTAINER_FEATURE_BY_REF:
+            merged[reference] = _default_feature_options(reference)
+    return merged
+
+
+def _build_devcontainer_json_payload(request_data: DevcontainerBuildRequest) -> dict[str, Any]:
+    container_name = _sanitize_devcontainer_name(request_data.name)
+    base_image = (request_data.baseImage or "").strip() or "ubuntu:noble"
+    selected_features = _apply_mandatory_features(_validate_selected_features(request_data.features))
+
+    payload: dict[str, Any] = {
+        "name": container_name,
+        "image": base_image,
+        "features": selected_features,
     }
 
-    wordlistForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const wrong = document.getElementById('wrongWord').value.trim();
-        const right = document.getElementById('rightWord').value.trim();
-        if (!wrong || !right) return;
+    if request_data.forwardPorts:
+        payload["forwardPorts"] = request_data.forwardPorts
+
+    if request_data.portsAttributes:
+        payload["portsAttributes"] = request_data.portsAttributes
+
+    if request_data.hostRequirements:
+        payload["hostRequirements"] = request_data.hostRequirements
+
+    post_create = (request_data.postCreateCommand or "").strip()
+    if post_create:
+        payload["postCreateCommand"] = post_create
+
+    post_attach = (request_data.postAttachCommand or "").strip()
+    if post_attach:
+        payload["postAttachCommand"] = post_attach
+
+    if request_data.secrets:
+        payload["secrets"] = request_data.secrets
+
+    return payload
+
+
+def _build_devcontainer_zip_bytes(request_data: DevcontainerBuildRequest) -> bytes:
+    devcontainer_json = _build_devcontainer_json_payload(request_data)
+    buffer = io.BytesIO()
+
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.writestr(zipfile.ZipInfo(".devcontainer/"), "")
+        zipf.writestr(".devcontainer/devcontainer.json", json.dumps(devcontainer_json, indent=2) + "\n")
+
+        readme_content = (
+            "# Devcontainer Scaffold\n\n"
+            "Generated by DevRel Toolbox.\n\n"
+            "## Quick Start\n"
+            "1. Extract this ZIP into your repository root.\n"
+            "2. Open the folder in VS Code.\n"
+            "3. Run: Dev Containers: Reopen in Container.\n"
+        )
+        zipf.writestr(".devcontainer/README.md", readme_content)
+
+        if request_data.includeGitIgnore:
+            gitignore_content = (
+                "# Local environment files\n"
+                ".env\n"
+                ".env.*\n\n"
+                "# Python cache\n"
+                "__pycache__/\n"
+            )
+            zipf.writestr(".gitignore", gitignore_content)
+
+        utils_path = DEVCONTAINER_BUILDER_FILES_DIR / "utils.py"
+        if utils_path.exists():
+            zipf.write(utils_path, "utils.py")
+
+        if request_data.profile == "kubernetes":
+            installer_src = DEVCONTAINER_BUILDER_FILES_DIR / "environment_installer_kubernetes.py"
+        else:
+            installer_src = DEVCONTAINER_BUILDER_FILES_DIR / "environment_installer_base.py"
+        if installer_src.exists():
+            zipf.write(installer_src, "environment_installer.py")
+
+        on_attach_path = DEVCONTAINER_BUILDER_FILES_DIR / "on_attach.py"
+        if on_attach_path.exists():
+            zipf.write(on_attach_path, "on_attach.py")
+
+    return buffer.getvalue()
 
-        wordlistMessage.style.display = 'none';
-        wordlistSubmitBtn.disabled = true;
-
-        try {
-            const response = await fetch('/api/wordlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ wrong, right })
-            });
-            const data = await response.json();
-            if (response.ok) {
-                wordlistMessage.className = 'message success';
-                wordlistMessage.textContent = '✓ Added: "' + wrong + '" → "' + right + '"' + (data.updated ? ' (updated existing entry)' : '');
-                wordlistForm.reset();
-                loadWordlist();
-            } else {
-                wordlistMessage.className = 'message error';
-                wordlistMessage.textContent = '✗ Error: ' + (data.detail || 'Failed to update wordlist');
-            }
-        } catch (error) {
-            wordlistMessage.className = 'message error';
-            wordlistMessage.textContent = '✗ Error: ' + error.message;
-        } finally {
-            wordlistMessage.style.display = 'block';
-            wordlistSubmitBtn.disabled = false;
-        }
-    });
-
-    loadWordlist();
-</script>
-"""
-
-WORDLIST_MANAGER_HTML = build_standard_tool_page(
-    "Dynatrace DevRel Toolbox - Wordlist Manager",
-    "Wordlist Manager",
-    WORDLIST_MANAGER_BODY_HTML,
-    WORDLIST_MANAGER_SCRIPT,
-    WORDLIST_MANAGER_EXTRA_CSS,
-)
-
-CODE_CARDS_HEAD_HTML = """
-    <link id="hljsTheme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-"""
-
-CODE_CARDS_EXTRA_CSS = """
-.content {
-    grid-template-columns: minmax(320px, 400px) minmax(420px, 1fr);
-    align-items: start;
-}
-
-.panel h2 {
-    color: #1d2c57;
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-
-.controls-grid {
-    display: grid;
-    gap: 12px;
-}
-
-.controls-grid .row {
-    display: grid;
-    gap: 8px;
-}
-
-.controls-grid select,
-.controls-grid input[type="text"],
-.controls-grid textarea,
-.controls-grid input[type="range"] {
-    width: 100%;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-}
-
-.controls-grid select,
-.controls-grid input[type="text"],
-.controls-grid textarea {
-    padding: 10px 12px;
-}
-
-.controls-grid textarea {
-    min-height: 260px;
-    resize: vertical;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    line-height: 1.45;
-}
-
-.controls-grid select:focus,
-.controls-grid input[type="text"]:focus,
-.controls-grid textarea:focus {
-    outline: none;
-    border-color: #1966FF;
-}
-
-.range-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #5f6577;
-}
-
-.colour-picker {
-    display: flex;
-    gap: 12px;
-    margin: 12px 0;
-    flex-wrap: wrap;
-}
-
-.colour-swatch {
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 3px solid transparent;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-.colour-swatch::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    margin-bottom: 8px;
-    z-index: 10;
-    font-weight: 500;
-}
-
-.colour-swatch:hover::after {
-    opacity: 1;
-}
-
-.colour-swatch:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.colour-swatch.active {
-    border-color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.secondary-btn {
-    background: #eef2ff;
-    color: #25386f;
-    border: 1px solid #d3dbfb;
-}
-
-.preview-wrap {
-    display: grid;
-    gap: 12px;
-}
-
-.preview-note {
-    font-size: 13px;
-    color: #5a6277;
-}
-
-.capture-area {
-    padding: 24px;
-    border-radius: 14px;
-    background: #FF8C00;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-}
-
-.code-shell {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 14px 30px rgba(0,0,0,0.25);
-    border: 2px solid #000000;
-}
-
-.shell-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: #000000;
-}
-
-.traffic {
-    display: flex;
-    gap: 6px;
-}
-
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.dot.red { background: #ff605c; }
-.dot.yellow { background: #ffbd44; }
-.dot.green { background: #00ca4e; }
-
-.filename {
-    margin-left: auto;
-    font-size: 12px;
-    color: #ffffff;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.code-surface {
-    background: var(--code-bg, #0b1220);
-    padding: var(--code-pad, 22px);
-    min-height: 260px;
-    color: #d4d4d4;
-}
-
-.code-surface pre {
-    margin: 0;
-    overflow-x: auto;
-    line-height: 1.5;
-}
-
-.code-surface code {
-    font-size: var(--code-size, 16px);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    color: inherit;
-}
-
-.code-surface code,
-.code-surface code * {
-    line-height: 1.5 !important;
-}
-
-.status {
-    min-height: 18px;
-    font-size: 13px;
-    font-weight: 700;
-}
-
-.status.success { color: #1f8b4c; }
-.status.error { color: #a23333; }
-
-@media (max-width: 1080px) {
-    .content {
-        grid-template-columns: 1fr;
-    }
-}
-"""
-
-CODE_CARDS_BODY_HTML = """
-<main class="content">
-    <section class="panel">
-        <h2>Code Card Controls</h2>
-        <p class="subtitle">Build a shareable image from your code snippet.</p>
-
-        <div class="controls-grid">
-            <div class="row">
-                <label for="languageSelect">Language</label>
-                <select id="languageSelect">
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="bash">Bash</option>
-                    <option value="json">JSON</option>
-                    <option value="yaml">YAML</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="sql">SQL</option>
-                    <option value="go">Go</option>
-                    <option value="java">Java</option>
-                    <option value="plaintext">Plain text</option>
-                </select>
-            </div>
-
-            <div class="row">
-                <label for="themeSelect">Theme</label>
-                <select id="themeSelect">
-                    <option value="dt-dark">DT Dark</option>
-                    <option value="dt-light">DT Light</option>
-                    <option value="midnight">Midnight</option>
-                </select>
-            </div>
-
-            <div class="row">
-                <label>Background Colour</label>
-                <div class="colour-picker">
-                    <div class="colour-swatch" data-colour="#6002EE" data-tooltip="Purple - #6002EE" style="background-color: #6002EE;"></div>
-                    <div class="colour-swatch" data-colour="#BB0FD2" data-tooltip="Pink - #BB0FD2" style="background-color: #BB0FD2;"></div>
-                    <div class="colour-swatch" data-colour="#0B7EF0" data-tooltip="Blue - #0B7EF0" style="background-color: #0B7EF0;"></div>
-                    <div class="colour-swatch" data-colour="#00A3E0" data-tooltip="Turquoise - #00A3E0" style="background-color: #00A3E0;"></div>
-                    <div class="colour-swatch" data-colour="#000000" data-tooltip="Black - #000000" style="background-color: #000000;"></div>
-                </div>
-            </div>
-
-            <div class="row">
-                <label for="fileNameInput">Filename Label</label>
-                <input id="fileNameInput" type="text" value="snippet.py" spellcheck="false">
-            </div>
-
-            <div class="row">
-                <label for="fontSizeInput">Font Size</label>
-                <input id="fontSizeInput" type="range" min="12" max="28" value="16">
-                <div class="range-meta"><span>12px</span><span id="fontSizeValue">16px</span><span>28px</span></div>
-            </div>
-
-            <div class="row">
-                <label for="paddingInput">Card Padding</label>
-                <input id="paddingInput" type="range" min="12" max="48" value="24">
-                <div class="range-meta"><span>12px</span><span id="paddingValue">24px</span><span>48px</span></div>
-            </div>
-
-            <div class="row">
-                <label for="codeInput">Code</label>
-                <textarea id="codeInput" spellcheck="false">def greet(name: str) -> str:
-    return f"Hello, {name}!"
-
-
-print(greet("Dynatrace"))</textarea>
-            </div>
-
-            <div class="btn-row">
-                <button type="button" id="downloadBtn">Download PNG</button>
-            </div>
-            <div class="status" id="exportStatus"></div>
-        </div>
-    </section>
-
-    <section class="panel preview-wrap">
-        <h2>Preview</h2>
-        <p class="preview-note">This renders live and exports as a PNG, similar to Carbon-style code cards.</p>
-        <div id="captureArea" class="capture-area">
-            <div class="code-shell">
-                <div class="shell-top">
-                    <div class="traffic">
-                        <span class="dot red"></span>
-                        <span class="dot yellow"></span>
-                        <span class="dot green"></span>
-                    </div>
-                    <span class="filename" id="filenameLabel">snippet.py</span>
-                </div>
-                <div class="code-surface" id="codeSurface">
-                    <pre><code id="codeBlock" class="language-python"></code></pre>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-"""
-
-CODE_CARDS_SCRIPT = """
-<script>
-    const themeMap = {
-        'dt-dark': {
-            sheet: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css',
-            canvasBg: '#0b1020',
-            shellTop: 'rgba(255,255,255,0.05)',
-            codeBg: '#111827',
-            filename: 'rgba(255,255,255,0.8)'
-        },
-        'dt-light': {
-            sheet: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css',
-            canvasBg: '#dbe7ff',
-            shellTop: 'rgba(15,23,42,0.08)',
-            codeBg: '#ffffff',
-            filename: '#1f2f57'
-        },
-        'midnight': {
-            sheet: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css',
-            canvasBg: '#0a0f1f',
-            shellTop: 'rgba(255,255,255,0.06)',
-            codeBg: '#1e2430',
-            filename: 'rgba(255,255,255,0.82)'
-        }
-    };
-
-
-
-    const codeInput = document.getElementById('codeInput');
-    const languageSelect = document.getElementById('languageSelect');
-    const themeSelect = document.getElementById('themeSelect');
-    const fileNameInput = document.getElementById('fileNameInput');
-    const fontSizeInput = document.getElementById('fontSizeInput');
-    const paddingInput = document.getElementById('paddingInput');
-    const codeBlock = document.getElementById('codeBlock');
-    const fileNameLabel = document.getElementById('filenameLabel');
-    const captureArea = document.getElementById('captureArea');
-    const codeSurface = document.getElementById('codeSurface');
-    const exportStatus = document.getElementById('exportStatus');
-    const hljsTheme = document.getElementById('hljsTheme');
-    const fontSizeValue = document.getElementById('fontSizeValue');
-    const paddingValue = document.getElementById('paddingValue');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const colourSwatches = document.querySelectorAll('.colour-swatch');
-    
-    let selectedBgColour = '#6002EE'; // Default to purple
-
-    function setStatus(kind, text) {
-        exportStatus.className = 'status ' + kind;
-        exportStatus.textContent = text;
-    }
-
-    function updateBackgroundColour(hex) {
-        selectedBgColour = hex;
-        captureArea.style.background = hex;
-        
-        // Update active state
-        colourSwatches.forEach(swatch => {
-            if (swatch.dataset.colour === hex) {
-                swatch.classList.add('active');
-            } else {
-                swatch.classList.remove('active');
-            }
-        });
-    }
-
-    function applyTheme() {
-        const active = themeMap[themeSelect.value] || themeMap['dt-dark'];
-        hljsTheme.href = active.sheet;
-        captureArea.style.setProperty('--canvas-bg', active.canvasBg);
-        captureArea.style.setProperty('--shell-top', active.shellTop);
-        captureArea.style.setProperty('--code-bg', active.codeBg);
-        captureArea.style.setProperty('--filename-color', active.filename);
-    }
-
-    function renderCode() {
-        if (!codeBlock) {
-            console.error('codeBlock element not found');
-            return;
-        }
-        try {
-            codeBlock.className = 'language-' + languageSelect.value;
-            codeBlock.textContent = codeInput.value || ' ';
-            delete codeBlock.dataset.highlighted;
-            if (typeof hljs !== 'undefined' && hljs.highlightElement) {
-                hljs.highlightElement(codeBlock);
-            }
-            fileNameLabel.textContent = fileNameInput.value.trim() || 'snippet';
-            codeSurface.style.setProperty('--code-size', fontSizeInput.value + 'px');
-            codeSurface.style.setProperty('--code-pad', paddingInput.value + 'px');
-            fontSizeValue.textContent = fontSizeInput.value + 'px';
-            paddingValue.textContent = paddingInput.value + 'px';
-        } catch (err) {
-            console.error('renderCode error:', err);
-        }
-    }
-
-    async function canvasBlob(canvas) {
-        return new Promise((resolve, reject) => {
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    reject(new Error('Could not generate image blob'));
-                    return;
-                }
-                resolve(blob);
-            }, 'image/png');
-        });
-    }
-
-    async function exportPng() {
-        try {
-            if (typeof html2canvas === 'undefined') {
-                throw new Error('html2canvas library not loaded');
-            }
-            setStatus('', '');
-            renderCode();
-            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-            if (document.fonts && document.fonts.ready) {
-                await document.fonts.ready;
-            }
-
-            const name = (fileNameInput.value.trim() || 'code-card').replace(/[^a-zA-Z0-9._-]/g, '_');
-            const filename_ext = name.endsWith('.png') ? name : (name + '.png');
-
-            const exportNode = captureArea.cloneNode(true);
-            exportNode.style.position = 'fixed';
-            exportNode.style.left = '-9999px';
-            exportNode.style.top = '-9999px';
-            exportNode.style.width = '1200px';
-            exportNode.style.maxWidth = '1200px';
-            exportNode.style.margin = '0';
-            exportNode.style.zIndex = '-1';
-            document.body.appendChild(exportNode);
-
-            setStatus('', 'Rendering...');
-
-            let canvas;
-            try {
-                canvas = await html2canvas(exportNode, {
-                    backgroundColor: null,
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    allowTaint: true
-                });
-            } finally {
-                document.body.removeChild(exportNode);
-            }
-            
-            if (!canvas) {
-                throw new Error('Failed to render canvas');
-            }
-
-            const blob = await canvasBlob(canvas);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename_ext;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setStatus('success', 'Downloaded PNG');
-        } catch (error) {
-            console.error('Export error:', error);
-            setStatus('error', 'Export failed: ' + error.message);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', exportPng);
-        }
-
-        // Wire up colour picker swatches
-        colourSwatches.forEach(swatch => {
-            swatch.addEventListener('click', () => {
-                const colour = swatch.dataset.colour;
-                updateBackgroundColour(colour);
-            });
-        });
-
-        [codeInput, languageSelect, themeSelect, fileNameInput, fontSizeInput, paddingInput].forEach((el) => {
-            if (!el) return;
-            el.addEventListener('input', () => {
-                if (el === themeSelect) applyTheme();
-                renderCode();
-            });
-            el.addEventListener('change', () => {
-                if (el === themeSelect) applyTheme();
-                renderCode();
-            });
-        });
-
-        // Initialize with default colour
-        updateBackgroundColour(selectedBgColour);
-        applyTheme();
-        renderCode();
-    });
-</script>
-"""
-
-CODE_CARDS_HTML = build_standard_tool_page(
-    "Dynatrace DevRel Toolbox - Code Cards",
-    "Code Cards",
-    CODE_CARDS_BODY_HTML,
-    CODE_CARDS_SCRIPT,
-    CODE_CARDS_EXTRA_CSS,
-    CODE_CARDS_HEAD_HTML,
-)
 
 # Create a temporary directory for subtitles
 SUBTITLES_DIR = Path(tempfile.gettempdir()) / "youtube_subtitles"
@@ -2742,32 +534,39 @@ def apply_wordlist_to_srt(content: str) -> tuple[str, int]:
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     """Serve the HTML UI"""
-    return HTML_CONTENT
+    template = jinja_env.get_template("base.html")
+    return template.render()
 
 
 @app.get("/color-picker", response_class=HTMLResponse)
 async def get_color_picker():
     """Serve the standalone Dynatrace core color picker page."""
-    return COLOR_PICKER_HTML
+    return render_template_html("color-picker.html")
 
 
 @app.get("/wordlist-manager", response_class=HTMLResponse)
 async def get_wordlist_manager():
     """Serve the standalone Wordlist Manager page."""
-    return WORDLIST_MANAGER_HTML
+    return render_template_html("wordlist-manager.html")
 
 
 @app.get("/code-cards", response_class=HTMLResponse)
 async def get_code_cards():
     """Serve the standalone Code Cards page."""
     return HTMLResponse(
-        content=CODE_CARDS_HTML,
+        content=render_template_html("code-cards.html"),
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "Pragma": "no-cache",
             "Expires": "0",
         },
     )
+
+
+@app.get("/devcontainer-builder", response_class=HTMLResponse)
+async def get_devcontainer_builder():
+    """Serve the standalone Devcontainer Builder wizard page."""
+    return render_template_html("devcontainer-builder.html")
 
 @app.post("/api/download-subtitles")
 async def download_subtitles(data: YouTubeURL):
@@ -3802,6 +1601,42 @@ async def metadata_recommendations(data: MetadataInvestigationRequest):
     }
 
 
+@app.get("/api/devcontainer/features")
+async def get_devcontainer_features(search: str = ""):
+    """Return searchable feature catalog entries for Devcontainer Builder."""
+    query = (search or "").strip().lower()
+    features = DEVCONTAINER_FEATURES
+
+    if query:
+        features = [
+            feature
+            for feature in features
+            if query in feature.displayName.lower()
+            or query in feature.reference.lower()
+            or query in feature.maintainer.lower()
+            or query in feature.description.lower()
+        ]
+
+    return {
+        "features": [feature.model_dump() for feature in features],
+        "count": len(features),
+    }
+
+
+@app.post("/api/devcontainer/build")
+async def build_devcontainer_scaffold(data: DevcontainerBuildRequest):
+    """Build and return a ZIP scaffold containing a generated devcontainer config."""
+    zip_bytes = _build_devcontainer_zip_bytes(data)
+    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", _sanitize_devcontainer_name(data.name).lower())
+    filename = f"{safe_name or 'devcontainer'}-devcontainer-scaffold.zip"
+
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ── Channel Navigator ─────────────────────────────────────────────────────────
 
 CHANNEL_INDEX_FILE = Path(__file__).parent / "channel_index.json"
@@ -3838,834 +1673,189 @@ async def get_blog_index(refresh: bool = False):
     return {"blogs": data, "refreshed": False}
 
 
-NAVIGATOR_HTML = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynatrace DevRel Toolbox - Video Navigator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            min-height: 100vh;
-        }
-
-        header {
-            background: rgba(0,0,0,0.25);
-            backdrop-filter: blur(8px);
-            padding: 16px 32px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        header svg { width: 32px; height: 32px; fill: #fff; flex-shrink: 0; }
-
-        header .titles { flex: 1; display: flex; flex-direction: column; line-height: 1.1; }
-
-        header .brand {
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 0.1em; text-transform: uppercase;
-            color: rgba(255,255,255,0.65);
-        }
-
-        header h1 { font-size: 18px; font-weight: 700; color: #fff; }
-
-        header a.back {
-            color: rgba(255,255,255,0.75); text-decoration: none;
-            font-size: 13px; font-weight: 500;
-            padding: 5px 14px;
-            border: 1px solid rgba(255,255,255,0.35);
-            border-radius: 20px; transition: background 0.2s;
-        }
-        header a.back:hover { background: rgba(255,255,255,0.15); }
-
-        .search-wrap {
-            padding: 24px 32px 0;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .search-wrap input {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 17px;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            outline: none;
-        }
-        .search-wrap input:focus {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 3px rgba(255,255,255,0.4);
-        }
-
-        .meta-row {
-            max-width: 1400px;
-            margin: 10px auto 0;
-            padding: 0 32px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .grid {
-            max-width: 1400px;
-            margin: 18px auto 48px;
-            padding: 0 32px;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-        }
-
-        @media (max-width: 1200px) { .grid { grid-template-columns: repeat(4, 1fr); } }
-        @media (max-width: 900px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 600px)  { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
-        @media (max-width: 380px)  { .grid { grid-template-columns: 1fr; } }
-        @media (max-width: 600px)  { .search-wrap, .meta-row, .grid { padding: 0 12px; } .search-wrap { padding-top: 16px; } }
-
-        .card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.22); }
-
-        .card-thumb {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 */
-            background: #000;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .card-thumb img {
-            position: absolute;
-            inset: 0; width: 100%; height: 100%;
-            object-fit: cover;
-        }
-        .card-thumb .duration {
-            position: absolute;
-            bottom: 5px; right: 5px;
-            background: rgba(0,0,0,0.82);
-            color: #fff; font-size: 11px; font-weight: 600;
-            padding: 1px 5px; border-radius: 3px;
-        }
-
-        .card-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-
-        .card-title {
-            font-size: 13px; font-weight: 700;
-            color: #1a1a1a; line-height: 1.35;
-            text-decoration: none;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .card-title:hover { color: #1966FF; }
-
-        .chapters { display: flex; flex-direction: column; gap: 3px; }
-
-        .chapter-link {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 11.5px; color: #555;
-            text-decoration: none; padding: 2px 0;
-            transition: color 0.15s;
-            min-width: 0;
-        }
-        .chapter-link:hover { color: #1966FF; }
-        .chapter-link .ts {
-            font-size: 10px; font-weight: 700;
-            color: #fff; background: #1966FF;
-            padding: 1px 5px; border-radius: 3px;
-            flex-shrink: 0;
-        }
-        .chapter-link .ch-title {
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-
-        .mark { background: #fff3cd; border-radius: 2px; padding: 0 1px; }
-
-        .no-results, .empty-index {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: rgba(255,255,255,0.85);
-            font-size: 17px;
-            padding: 60px 0;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
-            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
-        </svg>
-        <div class="titles">
-            <span class="brand">Dynatrace</span>
-            <h1>Video Navigator</h1>
-        </div>
-        <a href="/" class="back">&larr; Back to Toolbox</a>
-    </header>
-
-    <div class="search-wrap">
-        <input type="search" id="searchInput" placeholder="Search videos and chapters&hellip;" autocomplete="off" autofocus spellcheck="false">
-    </div>
-    <div class="meta-row" style="margin-top: 8px;">
-        Need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700; text-decoration:underline;">Index Refresh Docs</a>.
-    </div>
-    <div class="meta-row" id="metaRow"></div>
-    <div class="grid" id="grid"></div>
-
-    <script>
-        let allVideos = [];
-
-        function escapeHtml(s) {
-            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        }
-
-        function highlight(text, q) {
-            if (!q) return escapeHtml(text);
-            const esc = q.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-            return escapeHtml(text).replace(new RegExp('(' + esc + ')', 'gi'), '<span class="mark">$1</span>');
-        }
-
-        function renderResults(query) {
-            const q = query.trim().toLowerCase();
-            const grid = document.getElementById('grid');
-            const meta = document.getElementById('metaRow');
-
-            if (allVideos.length === 0) {
-                grid.innerHTML = '<div class="empty-index">No videos indexed yet. Use the <a href="/" style="color:#fff;font-weight:600;">DevRel Toolbox</a> to build the channel index.</div>';
-                meta.textContent = '';
-                return;
-            }
-
-            let matchCount = 0;
-            const html = [];
-
-            for (const video of allVideos) {
-                const titleHit = !q || video.title.toLowerCase().includes(q);
-                const matchingChapters = q
-                    ? video.chapters.filter(c => c.title.toLowerCase().includes(q) || titleHit)
-                    : video.chapters;
-                const hasMatch = !q || titleHit || video.chapters.some(c => c.title.toLowerCase().includes(q));
-                if (!hasMatch) continue;
-                matchCount++;
-
-                const ytBase = 'https://www.youtube.com/watch?v=' + video.id;
-                const thumb = 'https://img.youtube.com/vi/' + video.id + '/hqdefault.jpg';
-
-                const chaptersHtml = matchingChapters.map(c => {
-                    const url = ytBase + '&t=' + c.seconds + 's';
-                    return '<a href="' + url + '" target="_blank" rel="noopener" class="chapter-link">'
-                        + '<span class="ts">' + escapeHtml(c.time) + '</span>'
-                        + '<span class="ch-title">' + highlight(c.title, q) + '</span>'
-                        + '</a>';
-                }).join('');
-
-                html.push(
-                    '<div class="card">'
-                    + '<a href="' + ytBase + '" target="_blank" rel="noopener" class="card-thumb">'
-                    + '<img src="' + thumb + '" alt="" loading="lazy">'
-                    + (video.duration ? '<span class="duration">' + escapeHtml(video.duration) + '</span>' : '')
-                    + '</a>'
-                    + '<div class="card-body">'
-                    + '<a href="' + ytBase + '" target="_blank" rel="noopener" class="card-title">' + highlight(video.title, q) + '</a>'
-                    + '<div class="chapters">' + chaptersHtml + '</div>'
-                    + '</div>'
-                    + '</div>'
-                );
-            }
-
-            if (q && html.length === 0) {
-                grid.innerHTML = '<div class="no-results">No results for &ldquo;' + escapeHtml(query) + '&rdquo;</div>';
-            } else {
-                grid.innerHTML = html.join('');
-            }
-
-            meta.textContent = q
-                ? matchCount + ' of ' + allVideos.length + ' video' + (allVideos.length !== 1 ? 's' : '')
-                : allVideos.length + ' video' + (allVideos.length !== 1 ? 's' : '');
-        }
-
-        document.getElementById('searchInput').addEventListener('input', e => renderResults(e.target.value));
-
-        fetch('/api/channel-index')
-            .then(r => r.json())
-            .then(data => { allVideos = data.videos || []; renderResults(''); });
-    </script>
-</body>
-</html>"""
-
-
-BLOG_NAVIGATOR_HTML = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynatrace DevRel Toolbox - Blog Navigator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            min-height: 100vh;
-        }
-
-        header {
-            background: rgba(0,0,0,0.25);
-            backdrop-filter: blur(8px);
-            padding: 16px 32px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        header svg { width: 32px; height: 32px; fill: #fff; flex-shrink: 0; }
-
-        header .titles { flex: 1; display: flex; flex-direction: column; line-height: 1.1; }
-
-        header .brand {
-            font-size: 11px; font-weight: 600;
-            letter-spacing: 0.1em; text-transform: uppercase;
-            color: rgba(255,255,255,0.65);
-        }
-
-        header h1 { font-size: 18px; font-weight: 700; color: #fff; }
-
-        header a.back {
-            color: rgba(255,255,255,0.75); text-decoration: none;
-            font-size: 13px; font-weight: 500;
-            padding: 5px 14px;
-            border: 1px solid rgba(255,255,255,0.35);
-            border-radius: 20px; transition: background 0.2s;
-        }
-        header a.back:hover { background: rgba(255,255,255,0.15); }
-
-        .search-wrap {
-            padding: 24px 32px 0;
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .search-wrap input {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 17px;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            outline: none;
-        }
-
-        .search-wrap button {
-            width: auto;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .meta-row {
-            max-width: 1400px;
-            margin: 10px auto 0;
-            padding: 0 32px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-        }
-
-        .grid {
-            max-width: 1400px;
-            margin: 18px auto 48px;
-            padding: 0 32px;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-        }
-
-        @media (max-width: 1200px) { .grid { grid-template-columns: repeat(4, 1fr); } }
-        @media (max-width: 900px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 600px)  { .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
-        @media (max-width: 380px)  { .grid { grid-template-columns: 1fr; } }
-        @media (max-width: 700px)  { .search-wrap, .meta-row, .grid { padding: 0 12px; } .search-wrap { padding-top: 14px; } .search-wrap button { padding: 12px; } }
-
-        .card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.22); }
-
-        .card-thumb {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%;
-            background: #000;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .card-thumb img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .card-thumb .blog-badge {
-            position: absolute;
-            bottom: 6px;
-            right: 6px;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .card-body {
-            padding: 10px 12px 12px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .card-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #1a1a1a;
-            text-decoration: none;
-            line-height: 1.35;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .card-title:hover { color: #1966FF; }
-
-        .meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            font-size: 11px;
-            color: #666;
-        }
-
-        .tag {
-            background: #e8f5fb;
-            color: #17516a;
-            border-radius: 999px;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .summary {
-            color: #444;
-            font-size: 11.5px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 4;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .mark { background: #fff3cd; border-radius: 2px; padding: 0 1px; }
-
-        .no-results, .empty-index {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: rgba(255,255,255,0.9);
-            font-size: 17px;
-            padding: 60px 0;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
-            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
-        </svg>
-        <div class="titles">
-            <span class="brand">Dynatrace</span>
-            <h1>Blog Navigator</h1>
-        </div>
-        <a href="/" class="back">&larr; Back to Toolbox</a>
-    </header>
-
-    <div class="search-wrap">
-        <input type="search" id="searchInput" placeholder="Search blogs by keyword, category, or summary..." autocomplete="off" autofocus spellcheck="false">
-    </div>
-    <div class="meta-row" style="margin-top: 8px;">
-        Need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700; text-decoration:underline;">Index Refresh Docs</a>.
-    </div>
-    <div class="meta-row" id="metaRow"></div>
-    <div class="grid" id="grid"></div>
-
-    <script>
-        let allBlogs = [];
-
-        function escapeHtml(s) {
-            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        }
-
-        function escapeAttr(s) {
-            return escapeHtml(s).replace(/"/g, '&quot;');
-        }
-
-        function highlight(text, q) {
-            if (!q) return escapeHtml(text);
-            const esc = q.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-            return escapeHtml(text).replace(new RegExp('(' + esc + ')', 'gi'), '<span class="mark">$1</span>');
-        }
-
-        function renderResults(query) {
-            const q = query.trim().toLowerCase();
-            const grid = document.getElementById('grid');
-            const meta = document.getElementById('metaRow');
-
-            if (allBlogs.length === 0) {
-                grid.innerHTML = '<div class="empty-index">No blog entries indexed yet. Click Refresh to fetch the latest posts.</div>';
-                meta.textContent = '';
-                return;
-            }
-
-            let matchCount = 0;
-            const html = [];
-
-            for (const blog of allBlogs) {
-                const haystack = [
-                    blog.title || '',
-                    blog.summary || '',
-                    (blog.categories || []).join(' '),
-                    blog.published || ''
-                ].join(' ').toLowerCase();
-
-                if (q && !haystack.includes(q)) continue;
-                matchCount++;
-
-                const tags = (blog.categories || []).slice(0, 4).map(c => '<span class="tag">' + highlight(c, q) + '</span>').join('');
-                const published = blog.published ? '<span>Published: ' + escapeHtml(blog.published) + '</span>' : '';
-                const image = blog.image_url || '';
-                const thumbInner = image
-                    ? '<img src="' + escapeAttr(image) + '" alt="" loading="lazy">'
-                    : '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.8); font-size:12px;">No image</div>';
-
-                html.push(
-                    '<div class="card">'
-                    + '<a href="' + escapeAttr(blog.url || '#') + '" target="_blank" rel="noopener" class="card-thumb">'
-                    + thumbInner
-                    + '<span class="blog-badge">Blog</span>'
-                    + '</a>'
-                    + '<div class="card-body">'
-                    + '<a href="' + escapeAttr(blog.url || '#') + '" target="_blank" rel="noopener" class="card-title">' + highlight(blog.title || 'Untitled post', q) + '</a>'
-                    + '<div class="meta">' + published + tags + '</div>'
-                    + '<p class="summary">' + highlight(blog.summary || 'No summary available.', q) + '</p>'
-                    + '</div>'
-                    + '</div>'
-                );
-            }
-
-            if (q && html.length === 0) {
-                grid.innerHTML = '<div class="no-results">No results for &ldquo;' + escapeHtml(query) + '&rdquo;</div>';
-            } else {
-                grid.innerHTML = html.join('');
-            }
-
-            meta.textContent = q
-                ? matchCount + ' of ' + allBlogs.length + ' blog post' + (allBlogs.length !== 1 ? 's' : '')
-                : allBlogs.length + ' blog post' + (allBlogs.length !== 1 ? 's' : '');
-        }
-
-        async function loadBlogs() {
-            try {
-                const resp = await fetch('/api/blog-index');
-                const data = await resp.json();
-                allBlogs = data.blogs || [];
-                renderResults(document.getElementById('searchInput').value || '');
-            } catch (error) {
-                const grid = document.getElementById('grid');
-                grid.innerHTML = '<div class="no-results">Failed to load blog index: ' + escapeHtml(error.message) + '</div>';
-            }
-        }
-
-        document.getElementById('searchInput').addEventListener('input', e => renderResults(e.target.value));
-        loadBlogs();
-    </script>
-</body>
-</html>"""
-
-
-INDEX_REFRESH_DOCS_HTML = """<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynatrace DevRel Toolbox - Index Refresh Docs</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
-            min-height: 100vh;
-            color: #10224f;
-        }
-
-        header {
-            background: rgba(0,0,0,0.25);
-            backdrop-filter: blur(8px);
-            padding: 16px 32px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        header svg {
-            width: 32px;
-            height: 32px;
-            fill: #fff;
-            flex-shrink: 0;
-        }
-
-        .titles {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-        }
-
-        .brand {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.65);
-        }
-
-        header h1 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .back {
-            color: rgba(255,255,255,0.75);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 5px 14px;
-            border: 1px solid rgba(255,255,255,0.35);
-            border-radius: 20px;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-        .back:hover { background: rgba(255,255,255,0.15); }
-
-        .docs-wrap {
-            max-width: 980px;
-            margin: 24px auto 40px;
-            padding: 0 16px;
-        }
-
-        .shell {
-            background: rgba(255,255,255,0.96);
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.65);
-            box-shadow: 0 18px 40px rgba(0,0,0,0.22);
-            overflow: hidden;
-        }
-
-        .content {
-            padding: 20px 24px 26px;
-            display: grid;
-            gap: 18px;
-        }
-
-        .docs-top {
-            padding: 20px 24px;
-            background: linear-gradient(135deg, #e9f1ff 0%, #f3efff 100%);
-            border-bottom: 1px solid #d7e2ff;
-        }
-
-        .docs-top h2 {
-            margin: 0;
-            font-size: 20px;
-            color: #1e2f6b;
-        }
-
-        .callout {
-            background: #eef4ff;
-            border: 1px solid #d3e1ff;
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #223d7a;
-        }
-
-        section {
-            background: #fff;
-            border: 1px solid #e6ecff;
-            border-radius: 10px;
-            padding: 14px;
-        }
-
-        h2 {
-            font-size: 18px;
-            color: #1e2f6b;
-            margin-bottom: 10px;
-        }
-
-        ol {
-            margin-left: 18px;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        li + li {
-            margin-top: 6px;
-        }
-
-        pre {
-            margin-top: 10px;
-            background: #0f1f4a;
-            color: #e7eeff;
-            border-radius: 8px;
-            padding: 11px 12px;
-            overflow-x: auto;
-            font-size: 13px;
-            line-height: 1.45;
-        }
-
-        code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-        }
-
-        @media (max-width: 680px) {
-            header {
-                padding: 14px 12px;
-            }
-
-            .back {
-                padding: 5px 10px;
-            }
-
-            .docs-wrap {
-                margin-top: 14px;
-                padding: 0 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Dynatrace">
-            <path d="M9.372 0c-.31.006-.93.09-1.521.654-.872.824-5.225 4.957-6.973 6.617-.79.754-.72 1.595-.72 1.664v.377c.067-.292.187-.5.427-.825.496-.616 1.3-.788 1.627-.822a64.238 64.238 0 01.002 0 64.238 64.238 0 016.528-.55c4.335-.136 7.197.226 7.197.226l6.085-5.794s-3.188-.6-6.82-1.027a93.4 93.4 0 00-5.64-.514c-.02 0-.09-.008-.192-.006zm13.56 2.508l-6.066 5.79s.222 2.881-.137 7.2c-.189 2.45-.584 4.866-.875 6.494-.052.326-.256 1.114-.925 1.594-.29.198-.49.295-.748.363 1.546-.51 1.091-7.047 1.091-7.047-4.335.137-7.214-.223-7.214-.223l-6.085 5.793s3.223.634 6.856 1.045c2.056.24 4.833.429 5.227.463.023 0 .045-.007.068-.012-.013.003-.022.009-.035.012.138 0 .26.015.38.015.084 0 .924.105 1.712-.648 1.748-1.663 6.084-5.81 6.94-6.634.789-.754.72-1.594.72-1.68a81.846 81.846 0 00-.206-5.654 101.75 101.75 0 00-.701-6.872zM3.855 8.306c-1.73.002-3.508.208-3.696 1.021.017 1.216.05 3.137.205 5.28.24 3.65.703 6.887.703 6.887l6.083-5.79c-.017.016-.24-2.88.12-7.2 0 0-1.684-.201-3.416-.2z"/>
-        </svg>
-        <div class="titles">
-            <span class="brand">Dynatrace</span>
-            <h1>Index Refresh Docs</h1>
-        </div>
-        <a href="/" class="back">&larr; Back to Toolbox</a>
-    </header>
-
-    <main class="docs-wrap">
-    <div class="shell">
-        <div class="docs-top">
-            <h2>How To Refresh Content Indexes</h2>
-        </div>
-
-        <div class="content">
-            <div class="callout">
-                Use these commands from a local devcontainer terminal in the workspace root. This updates the JSON index files consumed by Blog Navigator and Video Navigator.
-            </div>
-
-            <section>
-                <h2>Update Blog Posts</h2>
-                <ol>
-                    <li>Open the devcontainer terminal in the project root.</li>
-                    <li>Run the blog index updater command.</li>
-                    <li>Reload Blog Navigator to confirm new posts are searchable.</li>
-                </ol>
-                <pre><code>python3 index_updater.py blog --base-dir .</code></pre>
-            </section>
-
-            <section>
-                <h2>Update YouTube Videos</h2>
-                <ol>
-                    <li>Open the devcontainer terminal in the project root.</li>
-                    <li>Run a batch update for the channel index (videos and shorts).</li>
-                    <li>Reload Video Navigator and verify new videos and chapter links appear.</li>
-                </ol>
-                <pre><code>python3 index_updater.py video --base-dir . --batch-size 50</code></pre>
-            </section>
-
-            <section>
-                <h2>Helpful Variants</h2>
-                <pre><code># Rebuild all video index entries from scratch
-python3 index_updater.py video --base-dir . --batch-size 9999 --force
-
-# Limit blog crawler depth when testing
-python3 index_updater.py blog --base-dir . --max-pages 5</code></pre>
-            </section>
-        </div>
-    </div>
-    </main>
-</body>
-</html>"""
-
-
 @app.get("/navigator", response_class=HTMLResponse)
 async def get_navigator():
     """Serve the standalone Channel Navigator page."""
-    return NAVIGATOR_HTML
+    return render_template_html("navigator.html")
 
 
 @app.get("/blog-navigator", response_class=HTMLResponse)
 async def get_blog_navigator():
     """Serve the standalone Blog Navigator page."""
-    return BLOG_NAVIGATOR_HTML
+    return render_template_html("blog-navigator.html")
 
 
 @app.get("/docs/index-refresh", response_class=HTMLResponse)
 async def get_index_refresh_docs():
     """Serve maintainer docs for refreshing blog and video indexes."""
-    return INDEX_REFRESH_DOCS_HTML
+    return render_template_html("index-refresh-docs.html")
+
+
+# ── Webhook Tester ─────────────────────────────────────────────────────────────
+
+WEBHOOK_SITE_DIR = BASE_DIR / "webhook-site"
+WEBHOOK_SITE_REPO = "https://github.com/webhooksite/webhook.site.git"
+WEBHOOK_SITE_PORT = 8084
+
+
+def _webhook_dir_ready() -> bool:
+    return WEBHOOK_SITE_DIR.exists() and (WEBHOOK_SITE_DIR / "docker-compose.yml").exists()
+
+
+def _webhook_running() -> bool:
+    try:
+        with socket.create_connection(("localhost", WEBHOOK_SITE_PORT), timeout=2):
+            return True
+    except OSError:
+        return False
+
+
+def _stream_cmd(cmd: list, cwd: str | None, emit_fn, timeout: int = 600) -> int:
+    """Run a command, emitting each output line via emit_fn. Returns returncode."""
+    proc = subprocess.Popen(
+        cmd, cwd=cwd,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        text=True, bufsize=1,
+    )
+    try:
+        for line in proc.stdout:
+            stripped = line.rstrip()
+            if stripped:
+                emit_fn("line", text=stripped)
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        raise
+    return proc.returncode
+
+
+class WebhookSendRequest(BaseModel):
+    url: str
+    payload: dict
+
+
+@app.get("/webhook-tester", response_class=HTMLResponse)
+async def get_webhook_tester():
+    return render_template_html("webhook-tester.html")
+
+
+@app.post("/api/webhook/send")
+async def send_webhook_test(data: WebhookSendRequest):
+    """Proxy a CloudEvent test request to the user's webhook URL and return the response."""
+    url = (data.url or "").strip()
+    if not url.startswith("http://") and not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
+
+    body = json.dumps(data.payload, indent=2).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/cloudevents+json", "Accept": "*/*"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return {"status": resp.status, "body": resp.read().decode("utf-8", errors="replace")[:4000]}
+    except urllib.error.HTTPError as e:
+        return {"status": e.code, "body": e.read().decode("utf-8", errors="replace")[:4000]}
+    except urllib.error.URLError as e:
+        raise HTTPException(status_code=400, detail=f"Request failed: {e.reason}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/webhook/status")
+async def get_webhook_status():
+    running = await asyncio.to_thread(_webhook_running)
+    return {"running": running, "port": WEBHOOK_SITE_PORT}
+
+
+@app.post("/api/webhook/start")
+async def start_webhook():
+    async def event_stream():
+        queue: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_event_loop()
+
+        def _emit(evt_type: str, **kwargs):
+            loop.call_soon_threadsafe(queue.put_nowait, {"type": evt_type, **kwargs})
+
+        def run():
+            try:
+                if not _webhook_dir_ready():
+                    _emit("cmd", text="$ git clone " + WEBHOOK_SITE_REPO)
+                    rc = _stream_cmd(
+                        ["git", "clone", WEBHOOK_SITE_REPO, str(WEBHOOK_SITE_DIR)],
+                        cwd=None, emit_fn=_emit, timeout=120,
+                    )
+                    if rc != 0:
+                        _emit("error", text="git clone failed — check output above")
+                        return
+
+                env_file = WEBHOOK_SITE_DIR / ".env"
+                env_example = WEBHOOK_SITE_DIR / ".env.example"
+                if not env_file.exists() and env_example.exists():
+                    shutil.copy(env_example, env_file)
+                    _emit("line", text="Copied .env.example \u2192 .env")
+
+                _emit("cmd", text="$ docker compose up -d")
+                rc = _stream_cmd(
+                    ["docker", "compose", "up", "-d"],
+                    cwd=str(WEBHOOK_SITE_DIR), emit_fn=_emit, timeout=600,
+                )
+                if rc != 0:
+                    _emit("error", text="docker compose failed — check output above")
+                    return
+
+                _emit("done")
+            except subprocess.TimeoutExpired:
+                _emit("error", text="Timed out after 10 minutes")
+            except Exception as exc:
+                _emit("error", text=str(exc))
+
+        threading.Thread(target=run, daemon=True).start()
+        while True:
+            event = await queue.get()
+            yield f"data: {json.dumps(event)}\n\n"
+            if event["type"] in ("done", "error"):
+                break
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/api/webhook/stop")
+async def stop_webhook():
+    if not _webhook_dir_ready():
+        return {"stopped": True}
+
+    async def event_stream():
+        queue: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_event_loop()
+
+        def _emit(evt_type: str, **kwargs):
+            loop.call_soon_threadsafe(queue.put_nowait, {"type": evt_type, **kwargs})
+
+        def run():
+            try:
+                _emit("cmd", text="$ docker compose down")
+                rc = _stream_cmd(
+                    ["docker", "compose", "down"],
+                    cwd=str(WEBHOOK_SITE_DIR), emit_fn=_emit, timeout=120,
+                )
+                if rc != 0:
+                    _emit("error", text="docker compose down failed — check output above")
+                    return
+                _emit("done")
+            except Exception as exc:
+                _emit("error", text=str(exc))
+
+        threading.Thread(target=run, daemon=True).start()
+        while True:
+            event = await queue.get()
+            yield f"data: {json.dumps(event)}\n\n"
+            if event["type"] in ("done", "error"):
+                break
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 if __name__ == "__main__":

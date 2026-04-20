@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "python",
+      "displayName": "Python",
+      "maintainer": "Dev Container Spec Maintainers",
+      "reference": "ghcr.io/devcontainers/features/python:1.8.0",
+      "documentationURL": "https://github.com/devcontainers/features/tree/main/src/python",
+      "description": "Installs Python and common Python tooling.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "3.14.3",
+          "proposals": ["latest", "os-provided", "none", "3.14.3", "3.13", "3.12", "3.11", "3.10"],
+          "description": "Select a Python version to install."
+        },
+        "installTools": {
+          "type": "boolean",
+          "default": true,
+          "proposals": [],
+          "description": "Install common Python tools."
+        }
+      }
+    },
+    {
+      "id": "node",
+      "displayName": "Node.js",
+      "maintainer": "Dev Container Spec Maintainers",
+      "reference": "ghcr.io/devcontainers/features/node:1",
+      "documentationURL": "https://github.com/devcontainers/features/tree/main/src/node",
+      "description": "Installs Node.js, nvm, yarn, pnpm, and dependencies.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "lts",
+          "proposals": ["lts", "latest", "none", "22", "20"],
+          "description": "Select or enter a Node.js version to install."
+        },
+        "nodeGypDependencies": {
+          "type": "boolean",
+          "default": true,
+          "proposals": [],
+          "description": "Install dependencies used by node-gyp builds."
+        },
+        "pnpmVersion": {
+          "type": "string",
+          "default": "latest",
+          "proposals": ["latest", "8.8.0", "8.0.0", "7.30.0", "6.14.8", "5.18.10", "none"],
+          "description": "Select or enter the pnpm version to install."
+        }
+      }
+    },
+    {
+      "id": "docker-in-docker",
+      "displayName": "Docker in Docker",
+      "maintainer": "Dev Container Spec Maintainers",
+      "reference": "ghcr.io/devcontainers/features/docker-in-docker:2.16.1",
+      "documentationURL": "https://github.com/devcontainers/features/tree/main/src/docker-in-docker",
+      "description": "Installs Docker Engine and CLI in the container for nested container workloads.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "29.2.1",
+          "proposals": ["latest", "29.2.1"],
+          "description": "Docker engine version to install inside the devcontainer."
+        }
+      }
+    },
+    {
+      "id": "github-cli",
+      "displayName": "GitHub CLI",
+      "maintainer": "Dev Container Spec Maintainers",
+      "reference": "ghcr.io/devcontainers/features/github-cli:1.1.0",
+      "documentationURL": "https://github.com/devcontainers/features/tree/main/src/github-cli",
+      "description": "Installs the GitHub CLI.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "2.87.3",
+          "proposals": ["latest", "2.87.3"],
+          "description": "Version of GitHub CLI to install."
+        }
+      }
+    },
+    {
+      "id": "kind",
+      "displayName": "Kind",
+      "maintainer": "Mike Priscella",
+      "reference": "ghcr.io/mpriscella/features/kind:1.0.1",
+      "documentationURL": "https://github.com/mpriscella/features/tree/main/src/kind",
+      "description": "Install Kubernetes in Docker (kind) for local cluster testing.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "v0.31.0",
+          "proposals": ["latest", "v0.31.0", "v0.30.0"],
+          "description": "Select or enter a kind version. Available releases: https://github.com/kubernetes-sigs/kind/releases"
+        }
+      }
+    },
+    {
+      "id": "wget-apt-get",
+      "displayName": "wget (apt-get)",
+      "maintainer": "devcontainers-extra",
+      "reference": "ghcr.io/devcontainers-extra/features/wget-apt-get:1.0.17",
+      "documentationURL": "https://github.com/devcontainers-extra/features/tree/main/src/wget-apt-get",
+      "description": "Installs wget via apt-get.",
+      "options": {}
+    },
+    {
+      "id": "kubectl-helm-minikube",
+      "displayName": "Kubectl + Helm",
+      "maintainer": "Dev Container Spec Maintainers",
+      "reference": "ghcr.io/devcontainers/features/kubectl-helm-minikube:1",
+      "documentationURL": "https://github.com/devcontainers/features/tree/main/src/kubectl-helm-minikube",
+      "description": "Installs kubectl and Helm for Kubernetes workflows.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "v1.35.2",
+          "proposals": ["latest", "v1.35.2"],
+          "description": "Version of kubectl to install."
+        },
+        "helm": {
+          "type": "string",
+          "default": "v3.20.0",
+          "proposals": ["latest", "v3.20.0"],
+          "description": "Version of Helm to install."
+        },
+        "minikube": {
+          "type": "string",
+          "default": "none",
+          "proposals": ["none", "latest"],
+          "description": "Set to none when Kind is used as the local cluster runtime."
+        }
+      }
+    },
+    {
+      "id": "dtctl",
+      "displayName": "dtctl",
+      "maintainer": "agardnerIT",
+      "reference": "ghcr.io/agardnerIT/devcontainer-feature-dtctl/dtctl:1",
+      "documentationURL": "https://github.com/agardnerIT/devcontainer-feature-dtctl",
+      "description": "Installs the dtctl Dynatrace CLI.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "latest",
+          "proposals": ["latest", "0.24.0", "v0.24.0"],
+          "description": "Version of dtctl to install."
+        }
+      }
+    }
+  ]
+}
