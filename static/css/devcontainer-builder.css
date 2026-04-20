@@ -1,25 +1,19 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --dcb-bg-1: #0b1533;
-    --dcb-bg-2: #154caa;
     --dcb-panel: #ffffff;
     --dcb-border: #d8e0ee;
     --dcb-text: #192744;
     --dcb-muted: #5a6c89;
-    --dcb-accent: #0b66ff;
-    --dcb-accent-2: #00a896;
+    --dcb-accent: #1966FF;
     --dcb-soft: #f4f8ff;
-    --dcb-shadow: 0 14px 35px rgba(7, 25, 59, 0.18);
+    --dcb-shadow: 0 3px 12px rgba(0,0,0,0.15);
 }
 
 body {
     font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: var(--dcb-text);
-    background:
-        radial-gradient(1100px 600px at 10% -10%, rgba(255, 255, 255, 0.18) 0%, transparent 45%),
-        radial-gradient(900px 500px at 90% -20%, rgba(0, 230, 200, 0.16) 0%, transparent 45%),
-        linear-gradient(135deg, var(--dcb-bg-1) 0%, var(--dcb-bg-2) 100%);
+    background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
     min-height: 100vh;
     padding-bottom: 110px;
 }
@@ -36,9 +30,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 200;
-    background: rgba(7, 18, 42, 0.62);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(8px);
 }
 
 header svg {
@@ -70,19 +63,18 @@ header h1 {
 }
 
 header a.back {
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255,255,255,0.75);
     text-decoration: none;
     font-size: 13px;
-    font-weight: 600;
-    padding: 6px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 999px;
-    transition: background 0.2s, border-color 0.2s;
+    font-weight: 500;
+    padding: 5px 14px;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    transition: background 0.2s;
 }
 
 header a.back:hover {
-    background: rgba(255, 255, 255, 0.16);
-    border-color: rgba(255, 255, 255, 0.65);
+    background: rgba(255,255,255,0.15);
 }
 
 .content {
@@ -725,9 +717,9 @@ details[open] > summary::before {
     justify-content: space-between;
     gap: 14px;
     padding: 10px 18px;
-    background: rgba(7, 18, 42, 0.88);
+    background: rgba(0,0,0,0.35);
     border-top: 1px solid rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
 }
 
 .dcb-sticky-copy {
