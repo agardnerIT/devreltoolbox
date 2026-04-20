@@ -175,13 +175,14 @@ button {
 .color-title { font-size: 13px; font-weight: 700; color: #1f2a46; }
 .color-hex { font-family: monospace; font-size: 12px; color: #5a6277; font-weight: 700; }
 
-.selection { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.selection-swatch { width: 56px; height: 56px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2); background: #1966FF; }
-.selection h2 { font-size: 18px; color: #1a1a1a; }
-.selection p { font-size: 13px; color: #4c556a; }
-.selection .hex { font-family: monospace; font-weight: 700; color: #1d315f; }
+.unified-layout { display: flex; gap: 16px; flex-wrap: wrap; }
+.unified-side { flex: 0 0 200px; display: grid; gap: 7px; align-content: start; }
+.unified-preview-row { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+.unified-swatch { width: 48px; height: 48px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; background: #1966FF; }
+.unified-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+.unified-hex { font-family: monospace; font-size: 12px; color: #5a6277; }
 
-.status { min-height: 18px; margin-top: 8px; font-size: 13px; font-weight: 700; }
+.status { min-height: 16px; font-size: 12px; font-weight: 700; }
 .status.success { color: #1f8b4c; }
 .status.error { color: #a23333; }
 
@@ -193,6 +194,115 @@ button {
 @media (max-width: 900px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 600px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 380px)  { .grid { grid-template-columns: 1fr; } }
+
+/* ---- Unified Picker ---- */
+.picker-section-title { font-size: 15px; font-weight: 700; color: #273a72; margin-bottom: 10px; }
+.picker-main { flex: 1; min-width: 200px; display: grid; gap: 8px; }
+
+.color-field {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 0.45;
+    border-radius: 7px;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+}
+.cf-white {
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, #fff 0%, transparent 100%);
+}
+.cf-black {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, #000 100%);
+}
+.picker-cursor {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.35);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.hue-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%);
+    outline: none;
+    cursor: pointer;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+.hue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid rgba(0,0,0,0.25);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    cursor: grab;
+}
+.hue-slider::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid rgba(0,0,0,0.25);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    cursor: grab;
+}
+
+
+.output-row { display: grid; gap: 3px; }
+.output-row label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #5a6277; margin: 0; }
+.output-row-inner { display: flex; gap: 5px; }
+.output-row input[type="text"] { flex: 1; padding: 6px 8px; font-size: 12px; font-family: monospace; border: 1.5px solid #e0e0e0; border-radius: 5px; width: auto; }
+.output-row input[type="text"]:focus { border-color: #1966FF; outline: none; }
+.copy-btn {
+    padding: 6px 10px;
+    background: #f0f4ff;
+    color: #1966FF;
+    border: 1.5px solid #d0dbff;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    width: auto;
+}
+.copy-btn:hover { background: #e0eaff; }
+
+@media (max-width: 600px) { .unified-side { flex: 1 1 100%; } }
+
+/* ---- Colour Harmonies ---- */
+.harmony-grid { display: grid; gap: 10px; }
+.harmony-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.harmony-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #5a6277; width: 110px; flex-shrink: 0; }
+.harmony-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.harmony-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    border: 1px solid #dfe4f4;
+    border-radius: 8px;
+    padding: 6px;
+    background: #fff;
+    transition: transform 0.12s, box-shadow 0.12s;
+    min-width: 64px;
+}
+.harmony-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.harmony-chip.base-chip { border-color: #1966FF; }
+.harmony-chip.active { border-color: #1966FF; box-shadow: 0 0 0 3px rgba(25,102,255,0.2); }
+.harmony-block { width: 48px; height: 48px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.12); }
+.harmony-hex { font-family: monospace; font-size: 11px; color: #1d315f; font-weight: 700; }
+.harmony-tag { font-size: 10px; color: #8a9bbf; }
+
+@media (max-width: 600px) { .harmony-label { width: 100%; } }
 
     </style>
 </head>
@@ -222,15 +332,53 @@ button {
         <div class="grid" id="coreColorGrid"></div>
     </section>
 
-    <section class="panel" aria-live="polite" aria-atomic="true">
-        <div class="selection">
-            <div class="selection-swatch" id="selectionSwatch"></div>
-            <div class="selection-meta">
-                <h2 id="selectionName">Blue</h2>
-                <p>Current HEX: <span class="hex" id="selectionHex">#1966FF</span></p>
+    <section class="panel" aria-live="polite" aria-atomic="true" aria-label="Colour picker">
+        <div class="unified-layout">
+            <div class="picker-main">
+                <div class="color-field" id="colorField">
+                    <div class="cf-white"></div>
+                    <div class="cf-black"></div>
+                    <div class="picker-cursor" id="pickerCursor"></div>
+                </div>
+                <input type="range" id="hueSlider" class="hue-slider" min="0" max="360" value="220">
+            </div>
+            <div class="unified-side">
+                <div class="unified-preview-row">
+                    <div class="unified-swatch" id="selectionSwatch"></div>
+                    <div>
+                        <div class="unified-name" id="selectionName">Blue</div>
+                        <div class="unified-hex" id="selectionHex">#1966FF</div>
+                    </div>
+                </div>
+                <div class="output-row">
+                    <label>HEX</label>
+                    <div class="output-row-inner">
+                        <input type="text" id="hexOutput" value="#1966FF">
+                        <button class="copy-btn" id="copyHexBtn">Copy</button>
+                    </div>
+                </div>
+                <div class="output-row">
+                    <label>RGB</label>
+                    <div class="output-row-inner">
+                        <input type="text" id="rgbOutput" readonly>
+                        <button class="copy-btn" id="copyRgbBtn">Copy</button>
+                    </div>
+                </div>
+                <div class="output-row">
+                    <label>HSL</label>
+                    <div class="output-row-inner">
+                        <input type="text" id="hslOutput" readonly>
+                        <button class="copy-btn" id="copyHslBtn">Copy</button>
+                    </div>
+                </div>
+                <div class="status" id="statusMessage"></div>
             </div>
         </div>
-        <div class="status" id="statusMessage"></div>
+    </section>
+
+    <section class="panel" aria-label="Colour harmonies" id="harmonyPanel">
+        <p class="picker-section-title">Colour Harmonies</p>
+        <div class="harmony-grid" id="harmonyGrid"></div>
     </section>
 
     <section class="panel resources" aria-label="Brand resources">
@@ -246,70 +394,214 @@ button {
 
 
 <script>
-    const coreColors = [
-        { name: 'Pink', hex: '#BB0FD2' },
-        { name: 'Purple', hex: '#5E29E5' },
-        { name: 'Blue', hex: '#1966FF' },
-        { name: 'Turquoise', hex: '#5DF2E0' },
-        { name: 'Black', hex: '#000000' },
-    ];
-
-    const grid = document.getElementById('coreColorGrid');
-    const statusMessage = document.getElementById('statusMessage');
+    // ---- DOM refs ----
+    const grid            = document.getElementById('coreColorGrid');
+    const statusMessage   = document.getElementById('statusMessage');
     const selectionSwatch = document.getElementById('selectionSwatch');
-    const selectionName = document.getElementById('selectionName');
-    const selectionHex = document.getElementById('selectionHex');
+    const selectionName   = document.getElementById('selectionName');
+    const selectionHexEl  = document.getElementById('selectionHex');
+    const colorField      = document.getElementById('colorField');
+    const pickerCursor    = document.getElementById('pickerCursor');
+    const hueSlider       = document.getElementById('hueSlider');
+    const hexOutput       = document.getElementById('hexOutput');
+    const rgbOutput       = document.getElementById('rgbOutput');
+    const hslOutput       = document.getElementById('hslOutput');
+    const harmonyGrid     = document.getElementById('harmonyGrid');
 
-    function setSelection(color) {
-        selectionName.textContent = color.name;
-        selectionHex.textContent = color.hex;
-        selectionSwatch.style.background = color.hex;
+    // ---- Picker state ----
+    let pickerH = 220, pickerS = 90, pickerV = 100;
+
+    // ---- Colour utilities ----
+    function hsvToRgb(h, s, v) {
+        s /= 100; v /= 100;
+        const i = Math.floor(h / 60) % 6, f = h / 60 - Math.floor(h / 60);
+        const p = v*(1-s), q = v*(1-f*s), t = v*(1-(1-f)*s);
+        const [r,g,b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
+        return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+    }
+    function rgbToHsv(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+        let hh = 0;
+        const ss = max === 0 ? 0 : d/max, vv = max;
+        if (d !== 0) {
+            switch (max) {
+                case r: hh = ((g-b)/d + (g<b?6:0))/6; break;
+                case g: hh = ((b-r)/d + 2)/6; break;
+                default: hh = ((r-g)/d + 4)/6;
+            }
+        }
+        return [Math.round(hh*360), Math.round(ss*100), Math.round(vv*100)];
+    }
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r,g,b), min = Math.min(r,g,b);
+        let hh = 0, ss = 0, ll = (max+min)/2;
+        if (max !== min) {
+            const d = max - min;
+            ss = ll > 0.5 ? d/(2-max-min) : d/(max+min);
+            switch (max) {
+                case r: hh = ((g-b)/d + (g<b?6:0))/6; break;
+                case g: hh = ((b-r)/d + 2)/6; break;
+                default: hh = ((r-g)/d + 4)/6;
+            }
+        }
+        return [Math.round(hh*360), Math.round(ss*100), Math.round(ll*100)];
+    }
+    function rgbToHex(r, g, b) {
+        return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('').toUpperCase();
+    }
+    function hexToRgb(hex) {
+        hex = hex.replace(/^#/,'');
+        if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+        if (hex.length !== 6) return null;
+        const n = parseInt(hex, 16);
+        return isNaN(n) ? null : [(n>>16)&255, (n>>8)&255, n&255];
+    }
+    function hslToHex(h, s, l) {
+        h = ((h%360)+360)%360; s /= 100; l /= 100;
+        const a = s * Math.min(l, 1-l);
+        const f = n => { const k=(n+h/30)%12; return l - a*Math.max(-1,Math.min(k-3,9-k,1)); };
+        return '#' + [f(0),f(8),f(4)].map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join('').toUpperCase();
     }
 
+    // ---- Clipboard ----
     async function copyHex(hex) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(hex);
             return;
         }
-
-        const helper = document.createElement('textarea');
-        helper.value = hex;
-        helper.setAttribute('readonly', '');
-        helper.style.position = 'fixed';
-        helper.style.opacity = '0';
-        helper.style.pointerEvents = 'none';
-        document.body.appendChild(helper);
-        helper.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(helper);
-
-        if (!copied) {
-            throw new Error('Clipboard unavailable in this browser context');
-        }
+        const el = document.createElement('textarea');
+        el.value = hex; el.setAttribute('readonly','');
+        el.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+        document.body.appendChild(el); el.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(el);
+        if (!ok) throw new Error('Clipboard unavailable');
     }
 
+    // ---- Status ----
     function updateStatus(kind, text) {
         statusMessage.className = 'status ' + kind;
         statusMessage.textContent = text;
     }
 
+    // ---- Central render — updates picker UI, swatch, outputs, harmonies ----
+    function render(label) {
+        const [r, g, b] = hsvToRgb(pickerH, pickerS, pickerV);
+        const hex = rgbToHex(r, g, b);
+        const [hl, sl, ll] = rgbToHsl(r, g, b);
+
+        colorField.style.background = `hsl(${pickerH}, 100%, 50%)`;
+        pickerCursor.style.left = pickerS + '%';
+        pickerCursor.style.top  = (100 - pickerV) + '%';
+
+        selectionSwatch.style.background = hex;
+        selectionHexEl.textContent = hex;
+        if (label !== undefined) selectionName.textContent = label;
+
+        hexOutput.value = hex;
+        rgbOutput.value = `rgb(${r}, ${g}, ${b})`;
+        hslOutput.value = `hsl(${hl}, ${sl}%, ${ll}%)`;
+
+        updateHarmonies(hex);
+    }
+
+    // ---- Apply a hex from any source (brand btn, harmony chip, hex input) ----
+    function applyColor(hex, label) {
+        const rgb = hexToRgb(hex);
+        if (!rgb) return;
+        [pickerH, pickerS, pickerV] = rgbToHsv(...rgb);
+        hueSlider.value = pickerH;
+        render(label);
+    }
+
+    // ---- Harmony panel ----
+    const harmonyTypes = [
+        { name: 'Complementary',       offsets: [180] },
+        { name: 'Analogous',           offsets: [-30, 30] },
+        { name: 'Triadic',             offsets: [120, 240] },
+        { name: 'Split-complementary', offsets: [150, 210] },
+        { name: 'Tetradic',            offsets: [90, 180, 270] },
+    ];
+
+    function updateHarmonies(baseHex) {
+        const [r, g, b] = hexToRgb(baseHex);
+        const [h, s, l] = rgbToHsl(r, g, b);
+        harmonyGrid.innerHTML = '';
+
+        harmonyTypes.forEach(type => {
+            const row = document.createElement('div');
+            row.className = 'harmony-row';
+
+            const lbl = document.createElement('span');
+            lbl.className = 'harmony-label';
+            lbl.textContent = type.name;
+            row.appendChild(lbl);
+
+            const swatches = document.createElement('div');
+            swatches.className = 'harmony-swatches';
+
+            const allHexes = [baseHex, ...type.offsets.map(o => hslToHex(h+o, s, l))];
+            const tags = ['Base', ...type.offsets.map(o => (o>0?'+':'')+o+'°')];
+
+            allHexes.forEach((hex, i) => {
+                const chip = document.createElement('div');
+                chip.className = 'harmony-chip' + (i === 0 ? ' base-chip' : '');
+                chip.title = 'Click to select ' + hex;
+                chip.innerHTML =
+                    '<span class="harmony-block" style="background:' + hex + '"></span>' +
+                    '<span class="harmony-hex">' + hex + '</span>' +
+                    '<span class="harmony-tag">' + tags[i] + '</span>';
+
+                chip.addEventListener('click', async () => {
+                    // Highlight this chip
+                    harmonyGrid.querySelectorAll('.harmony-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+
+                    applyColor(hex, i === 0 ? selectionName.textContent : type.name + ' (' + tags[i] + ')');
+                    try {
+                        await copyHex(hex);
+                        updateStatus('success', 'Copied ' + hex + ' to clipboard');
+                    } catch (err) {
+                        updateStatus('error', 'Copy failed: ' + err.message);
+                    }
+                });
+
+                swatches.appendChild(chip);
+            });
+
+            row.appendChild(swatches);
+            harmonyGrid.appendChild(row);
+        });
+    }
+
+    // ---- Brand colour grid ----
+    const coreColors = [
+        { name: 'Pink',      hex: '#BB0FD2' },
+        { name: 'Purple',    hex: '#5E29E5' },
+        { name: 'Blue',      hex: '#1966FF' },
+        { name: 'Turquoise', hex: '#5DF2E0' },
+        { name: 'Black',     hex: '#000000' },
+    ];
+
     function createColorButton(color) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'color-btn';
-        btn.setAttribute('aria-label', color.name + ' ' + color.hex + ' copy hex');
+        btn.setAttribute('aria-label', color.name + ' ' + color.hex);
         btn.innerHTML =
             '<span class="swatch" style="background:' + color.hex + '"></span>' +
             '<span class="color-title">' + color.name + '</span>' +
             '<span class="color-hex">' + color.hex + '</span>';
 
         btn.addEventListener('click', async () => {
+            applyColor(color.hex, color.name);
             try {
                 await copyHex(color.hex);
-                setSelection(color);
                 updateStatus('success', 'Copied ' + color.hex + ' to clipboard');
-            } catch (error) {
-                updateStatus('error', 'Copy failed: ' + error.message);
+            } catch (err) {
+                updateStatus('error', 'Copy failed: ' + err.message);
             }
         });
 
@@ -317,7 +609,53 @@ button {
     }
 
     coreColors.forEach(color => grid.appendChild(createColorButton(color)));
-    setSelection(coreColors[2]);
+
+    // ---- Picker interaction ----
+    function pickFromEvent(e) {
+        const rect = colorField.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        pickerS = Math.max(0, Math.min(100, (cx - rect.left) / rect.width  * 100));
+        pickerV = Math.max(0, Math.min(100, 100 - (cy - rect.top) / rect.height * 100));
+        render();
+    }
+
+    let dragging = false;
+    colorField.addEventListener('mousedown',  e => { dragging = true; pickFromEvent(e); });
+    colorField.addEventListener('touchstart', e => { e.preventDefault(); dragging = true; pickFromEvent(e); }, { passive: false });
+    window.addEventListener('mousemove',  e => { if (dragging) pickFromEvent(e); });
+    window.addEventListener('touchmove',  e => { if (dragging) { e.preventDefault(); pickFromEvent(e); } }, { passive: false });
+    window.addEventListener('mouseup',  () => dragging = false);
+    window.addEventListener('touchend', () => dragging = false);
+
+    hueSlider.addEventListener('input', () => { pickerH = parseInt(hueSlider.value); render(); });
+
+    hexOutput.addEventListener('change', () => {
+        hexOutput.style.borderColor = '';
+        const rgb = hexToRgb(hexOutput.value.trim());
+        if (!rgb) { hexOutput.style.borderColor = '#dc3545'; return; }
+        [pickerH, pickerS, pickerV] = rgbToHsv(...rgb);
+        hueSlider.value = pickerH;
+        render();
+    });
+
+    // ---- Copy buttons ----
+    async function copyOutput(inputId) {
+        const val = document.getElementById(inputId).value;
+        try {
+            await copyHex(val);
+            updateStatus('success', 'Copied ' + val + ' to clipboard');
+        } catch (err) {
+            updateStatus('error', 'Copy failed: ' + err.message);
+        }
+    }
+    document.getElementById('copyHexBtn').addEventListener('click', () => copyOutput('hexOutput'));
+    document.getElementById('copyRgbBtn').addEventListener('click', () => copyOutput('rgbOutput'));
+    document.getElementById('copyHslBtn').addEventListener('click', () => copyOutput('hslOutput'));
+
+    // ---- Init ----
+    hueSlider.value = pickerH;
+    render('Blue');
 </script>
 
 </body>
