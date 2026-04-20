@@ -43,12 +43,12 @@
 
                 <section class="dcb-section">
                     <div class="dcb-section-heading">
-                        <h3>Project basics</h3>
-                        <span>Always visible</span>
+                        <h3><span class="dcb-section-step" aria-hidden="true">1</span> Project basics</h3>
+                        <span>Always included</span>
                     </div>
                     <div class="dcb-form-grid dcb-form-grid-two-up">
                         <label class="dcb-field">
-                            <span>Container name</span>
+                            <span>Demo name</span>
                             <input type="text" id="dcbName" placeholder="My Project Devcontainer" required>
                             <small>This becomes the <code>name</code> field in <code>devcontainer.json</code>.</small>
                         </label>
@@ -58,32 +58,20 @@
                             <small>Use any base image your team already trusts.</small>
                         </label>
                     </div>
-                    <div class="dcb-toggle-row">
-                        <label class="dcb-toggle-card">
-                            <input type="checkbox" id="dcbIncludeGitIgnore" checked>
-                            <div>
-                                <strong>Include .gitignore</strong>
-                                <span>Add a starter ignore file for local env files and Python cache.</span>
-                            </div>
-                        </label>
-                        <div class="dcb-static-note">
-                            <strong>README is always included</strong>
-                            <span>The scaffold always adds <code>.devcontainer/README.md</code>.</span>
-                        </div>
-                    </div>
+                    <input type="checkbox" id="dcbIncludeGitIgnore" checked hidden>
                 </section>
 
                 <section class="dcb-section">
                     <div class="dcb-section-heading">
-                        <h3>Foundation (locked)</h3>
-                        <span>Included in every scaffold</span>
+                        <h3><span class="dcb-section-step" aria-hidden="true">2</span> Foundation</h3>
+                        <span>Locked — always included</span>
                     </div>
                     <div id="dcbFoundationList" class="dcb-foundation-list"></div>
                 </section>
 
                 <section class="dcb-section">
                     <div class="dcb-section-heading">
-                        <h3>Add-ons (optional)</h3>
+                        <h3><span class="dcb-section-step" aria-hidden="true">3</span> Add-ons</h3>
                         <span id="dcbFeatureCount">0 selected</span>
                     </div>
 
@@ -99,24 +87,21 @@
                                 <span>Search add-ons</span>
                                 <input type="text" id="dcbSearch" placeholder="node, kind, kubectl, helm, dtctl...">
                             </label>
-                            <label class="dcb-recommended-toggle">
-                                <input type="checkbox" id="dcbRecommendedOnly">
-                                <span>Show recommended for selected profile</span>
-                            </label>
-                            <div class="dcb-select-row">
+                            <input type="checkbox" id="dcbRecommendedOnly" hidden>
+<div class="dcb-select-row">
                                 <select id="dcbFeatureSelect" aria-label="Available optional features"></select>
                                 <button type="button" id="dcbAddFeatureBtn" class="dcb-primary-button dcb-inline-button">Add</button>
                             </div>
                         </div>
                     </div>
 
-                    <article id="dcbFeatureSpotlight" class="dcb-feature-spotlight"></article>
+                    <p class="dcb-addon-hint">Find all available features at <a href="https://containers.dev/features" target="_blank" rel="noopener">containers.dev/features</a>. Missing one? <a href="https://github.com/agardnerit/devreltoolbox/issues" target="_blank" rel="noopener">Open an issue</a>.</p>
 
-                    <div id="dcbSelectedFeaturePills" class="dcb-feature-pill-list"></div>
+<div id="dcbSelectedFeaturePills" class="dcb-feature-pill-list"></div>
                 </section>
 
                 <section class="dcb-section">
-                    <details id="dcbAdvancedDetails" class="dcb-advanced" open>
+                    <details id="dcbAdvancedDetails" class="dcb-advanced">
                         <summary>Advanced settings</summary>
                         <div class="dcb-advanced-grid">
                             <label class="dcb-field">
@@ -133,12 +118,34 @@
                                 <input type="text" id="dcbPostAttachCommand" placeholder="npm run dev">
                             </label>
                         </div>
+                        <div class="dcb-advanced-subheading">Host requirements</div>
+                        <div class="dcb-advanced-grid">
+                            <label class="dcb-field">
+                                <span>Min CPUs</span>
+                                <input type="number" id="dcbHostCpus" value="2" min="1">
+                            </label>
+                            <label class="dcb-field">
+                                <span>Min memory</span>
+                                <input type="text" id="dcbHostMemory" value="4gb">
+                                <small>Value and unit, e.g. <code>4gb</code> or <code>8gb</code>.</small>
+                            </label>
+                            <label class="dcb-field">
+                                <span>Min storage</span>
+                                <input type="text" id="dcbHostStorage" value="32gb">
+                                <small>Value and unit, e.g. <code>32gb</code>.</small>
+                            </label>
+                            <label class="dcb-field dcb-field-checkbox">
+                                <span>Require GPU</span>
+                                <input type="checkbox" id="dcbHostGpu">
+                                <small>Marks that a GPU is required on the host.</small>
+                            </label>
+                        </div>
                     </details>
                 </section>
 
                 <section class="dcb-section">
                     <div class="dcb-section-heading">
-                        <h3>Feature options</h3>
+                        <h3><span class="dcb-section-step" aria-hidden="true">4</span> Configure add-ons</h3>
                         <span>Only for selected add-ons</span>
                     </div>
                     <div id="dcbConfigCards" class="dcb-config-card-list"></div>

@@ -17,7 +17,7 @@
         },
         "installTools": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "proposals": [],
           "description": "Install common Python tools."
         }
@@ -146,9 +146,25 @@
       "options": {
         "version": {
           "type": "string",
-          "default": "latest",
+          "default": "v0.24.0",
           "proposals": ["latest", "0.24.0", "v0.24.0"],
           "description": "Version of dtctl to install."
+        }
+      }
+    },
+    {
+      "id": "fakeFeature",
+      "displayName": "fake feature",
+      "maintainer": "agardnerIT",
+      "reference": "ghcr.io/agardnerIT/devcontainer-feature-fake-feature/fakeFeature:1",
+      "documentationURL": "https://github.com/agardnerIT/devcontainer-feature-fake-feature",
+      "description": "Installs the fake feature.",
+      "options": {
+        "version": {
+          "type": "string",
+          "default": "0.0.1",
+          "proposals": ["latest", "0.0.1", "v0.24.0"],
+          "description": "Version of fake feature to install."
         }
       }
     }

@@ -6,14 +6,12 @@
       "version": "3.12",
       "installTools": false
     },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
-    },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
     "ghcr.io/devcontainers-extra/features/yt-dlp:2": {}
   },
   "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --no-cache-dir -r requirements.txt",
+  "postAttachCommand": "python on_attach.py",
   "forwardPorts": [8000, 8084],
   "portsAttributes": {
     "8000": {

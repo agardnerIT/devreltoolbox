@@ -187,7 +187,8 @@
         <input type="search" id="searchInput" placeholder="Search videos by title and description&hellip;" autocomplete="off" autofocus spellcheck="false">
     </div>
     <div class="meta-row" style="margin-top: 8px;">
-        Need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700; text-decoration:underline;">Index Refresh Docs</a>.
+        Browse or search the <a href="https://www.youtube.com/@dynatrace" target="_blank" rel="noopener" style="color:#fff;font-weight:700;text-decoration:underline;">Dynatrace YouTube channel</a> &mdash;
+        need to refresh indexed content? See <a href="/docs/index-refresh" style="color:#fff;font-weight:700;text-decoration:underline;">Index Refresh Docs</a>.
     </div>
     <div class="meta-row" id="metaRow"></div>
     <div class="grid" id="grid"></div>
@@ -231,10 +232,6 @@
                 const ytBase = 'https://www.youtube.com/watch?v=' + video.id;
                 const thumb = 'https://img.youtube.com/vi/' + video.id + '/hqdefault.jpg';
 
-                const metaPills = [video.source, video.uploaded].filter(Boolean).map(v => (
-                    '<span class="meta-pill">' + escapeHtml(v) + '</span>'
-                )).join('');
-
                 html.push(
                     '<div class="card">'
                     + '<a href="' + ytBase + '" target="_blank" rel="noopener" class="card-thumb">'
@@ -244,7 +241,6 @@
                     + '<div class="card-body">'
                     + '<a href="' + ytBase + '" target="_blank" rel="noopener" class="card-title">' + highlight(title, q) + '</a>'
                     + '<p class="card-desc">' + highlight(description || 'No description available.', q) + '</p>'
-                    + '<div class="card-meta">' + metaPills + '</div>'
                     + '</div>'
                     + '</div>'
                 );

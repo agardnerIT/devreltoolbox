@@ -50,7 +50,7 @@ def _testing_fail(message: str):
 loaded = load_dotenv()
 
 RUNME_CLI_VERSION = "3.16.10"
-REPOSITORY_NAME = os.environ.get("RepositoryName", "")
+REPOSITORY_NAME = os.environ.get("RepositoryName", "devreltoolbox")
 BASE_DIR = os.environ.get("BASE_DIR", f"/workspaces/{REPOSITORY_NAME}")
 DEV_MODE = os.environ.get("DEV_MODE", "FALSE").upper() # This is a string. NOT a bool.
 TESTING_DYNATRACE_USER_EMAIL = os.environ.get("TESTING_DYNATRACE_USER_EMAIL", "")

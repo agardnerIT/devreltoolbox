@@ -534,14 +534,15 @@ def build_video_index(
     max_items = max(1, int(max_items))
     max_age_days = max(1, int(max_age_days))
     date_after = (datetime.now(timezone.utc) - timedelta(days=max_age_days)).strftime("%Y%m%d")
+    list_limit = 150
     emit_status(
-        f"Recent-only mode: up to {max_items} entries per source, newer than {date_after}"
+        f"Recent-only mode: listing up to {list_limit} entries per source, newer than {date_after}, indexing up to {batch_target} new per run"
     )
 
     for source_url, label in ((channel_video_url, "videos"), (channel_shorts_url, "shorts")):
         emit_status(f"Listing channel {label} with yt-dlp…")
         cmd = ["yt-dlp", "--flat-playlist", "--dump-json", "--no-warnings"]
-        cmd.extend(["--playlist-end", str(max_items), "--dateafter", date_after])
+        cmd.extend(["--playlist-end", str(list_limit), "--dateafter", date_after])
         cmd.append(source_url)
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         if result.returncode != 0:
@@ -559,9 +560,9 @@ def build_video_index(
                 continue
             seen_ids.add(video_id)
             video_list.append((item, label))
-            if len(video_list) >= max_items:
+            if len(video_list) >= list_limit:
                 break
-        if len(video_list) >= max_items:
+        if len(video_list) >= list_limit:
             break
 
     emit_status(f"Found {len(video_list)} videos. Indexing up to {batch_target} new video(s)…")
@@ -571,7 +572,6 @@ def build_video_index(
     errors = 0
     result_videos = list(existing_by_id.values()) if not force else []
     indexed_ids = {v["id"] for v in result_videos if isinstance(v, dict) and "id" in v}
-    known_streak = 0
 
     total_candidates = len(video_list)
     for idx, (raw, source_label) in enumerate(video_list, start=1):
@@ -584,16 +584,8 @@ def build_video_index(
 
         if video_id in indexed_ids:
             skipped += 1
-            known_streak += 1
             emit_video(title, "skip")
-            if not force and new_count == 0 and known_streak >= max(20, batch_target):
-                emit_status(
-                    "Encountered a long run of already indexed videos with no new items; stopping early"
-                )
-                break
             continue
-
-        known_streak = 0
 
         emit_status(f"[{idx}/{total_candidates}] Processing '{title}'")
         emit_video(title, "progress")
@@ -634,10 +626,19 @@ def build_video_index(
             f"Saved progress: {new_count} new, {skipped} skipped, {errors} errors, {len(result_videos)} total indexed"
         )
 
+    # Reorder to playlist order (newest first) and enforce hard cap of list_limit.
+    by_id = {v["id"]: v for v in result_videos if isinstance(v, dict) and "id" in v}
+    ordered = [by_id[raw.get("id", "")] for raw, _ in video_list if raw.get("id", "") in by_id]
+    ordered = ordered[:list_limit]
+
     if new_count == 0:
         emit_status("No new videos found; channel_index.json unchanged")
+    else:
+        with open(channel_index_file, "w", encoding="utf-8") as f:
+            json.dump(ordered, f, indent=2, ensure_ascii=False)
+        emit_status(f"Final index: {len(ordered)} video(s) (capped at {list_limit})")
 
-    return {"new_count": new_count, "skipped": skipped, "errors": errors, "total": len(result_videos)}
+    return {"new_count": new_count, "skipped": skipped, "errors": errors, "total": len(ordered)}
 
 
 def main() -> int:

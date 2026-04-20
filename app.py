@@ -186,12 +186,12 @@ MANDATORY_FEATURE_REFS = [
 def _sanitize_devcontainer_name(raw_name: str) -> str:
     name = (raw_name or "").strip()
     if not name:
-        raise HTTPException(status_code=400, detail="Container name is required")
+        raise HTTPException(status_code=400, detail="Demo name is required")
 
     clean = re.sub(r"[^a-zA-Z0-9._ -]", "_", name)
     clean = re.sub(r"\s+", " ", clean).strip()
     if not clean:
-        raise HTTPException(status_code=400, detail="Container name is invalid")
+        raise HTTPException(status_code=400, detail="Demo name is invalid")
     if len(clean) > 80:
         clean = clean[:80].rstrip()
     return clean
@@ -275,10 +275,30 @@ def _apply_mandatory_features(selected_features: dict[str, dict[str, Any]]) -> d
     return merged
 
 
+_BASE_DEFAULTS = {
+    "postCreateCommand": "pip install -r .devcontainer/requirements.txt && python environment_installer.py",
+    "postAttachCommand": "python on_attach.py"
+}
+
+_KUBERNETES_DEFAULTS = {
+    "forwardPorts": [8080],
+    "portsAttributes": {"8080": {"label": "OTEL Demo"}},
+    "hostRequirements": {"cpus": 2},
+    "postCreateCommand": "pip install -r .devcontainer/requirements.txt && python environment_installer.py",
+    "postAttachCommand": "python on_attach.py",
+    "secrets": {
+        "DT_ENVIRONMENT_ID": {"description": "eg. abc12345 from https://abc12345.live.dynatrace.com"},
+        "DT_ENVIRONMENT_TYPE": {"description": "eg. live, sprint or dev. If unsure, use live."},
+        "DT_API_TOKEN": {"description": "Dynatrace API token"},
+    },
+}
+
+
 def _build_devcontainer_json_payload(request_data: DevcontainerBuildRequest) -> dict[str, Any]:
     container_name = _sanitize_devcontainer_name(request_data.name)
     base_image = (request_data.baseImage or "").strip() or "ubuntu:noble"
     selected_features = _apply_mandatory_features(_validate_selected_features(request_data.features))
+    is_kubernetes = request_data.profile == "kubernetes"
 
     payload: dict[str, Any] = {
         "name": container_name,
@@ -286,25 +306,35 @@ def _build_devcontainer_json_payload(request_data: DevcontainerBuildRequest) -> 
         "features": selected_features,
     }
 
-    if request_data.forwardPorts:
-        payload["forwardPorts"] = request_data.forwardPorts
+    forward_ports = request_data.forwardPorts or (is_kubernetes and _KUBERNETES_DEFAULTS["forwardPorts"]) or []
+    if forward_ports:
+        payload["forwardPorts"] = forward_ports
 
-    if request_data.portsAttributes:
-        payload["portsAttributes"] = request_data.portsAttributes
+    ports_attributes = request_data.portsAttributes or (is_kubernetes and _KUBERNETES_DEFAULTS["portsAttributes"]) or {}
+    if ports_attributes:
+        payload["portsAttributes"] = ports_attributes
 
-    if request_data.hostRequirements:
-        payload["hostRequirements"] = request_data.hostRequirements
+    host_requirements = request_data.hostRequirements or (is_kubernetes and _KUBERNETES_DEFAULTS["hostRequirements"]) or {}
+    if host_requirements:
+        payload["hostRequirements"] = host_requirements
 
     post_create = (request_data.postCreateCommand or "").strip()
+    if not post_create:
+        post_create = _KUBERNETES_DEFAULTS["postCreateCommand"] if is_kubernetes else _BASE_DEFAULTS["postCreateCommand"]
     if post_create:
         payload["postCreateCommand"] = post_create
 
     post_attach = (request_data.postAttachCommand or "").strip()
+    if not post_attach:
+        post_attach = _KUBERNETES_DEFAULTS["postAttachCommand"] if is_kubernetes else _BASE_DEFAULTS["postAttachCommand"]
     if post_attach:
         payload["postAttachCommand"] = post_attach
 
-    if request_data.secrets:
-        payload["secrets"] = request_data.secrets
+    secrets = request_data.secrets or (is_kubernetes and _KUBERNETES_DEFAULTS["secrets"]) or {}
+    if secrets:
+        payload["secrets"] = secrets
+
+    payload["remoteEnv"] = {"RepositoryName": container_name}
 
     return payload
 
@@ -327,6 +357,14 @@ def _build_devcontainer_zip_bytes(request_data: DevcontainerBuildRequest) -> byt
         )
         zipf.writestr(".devcontainer/README.md", readme_content)
 
+        env_content = (
+            "DT_ENVIRONMENT_ID=abc12345\n"
+            "# Use \"live\", \"sprint\", or \"dev\". Defaults to \"live\" if unset.\n"
+            "DT_ENVIRONMENT_TYPE=live\n"
+            "DT_API_TOKEN=dt0s01.sample.secret\n"
+        )
+        zipf.writestr(".env", env_content)
+
         if request_data.includeGitIgnore:
             gitignore_content = (
                 "# Local environment files\n"
@@ -348,9 +386,23 @@ def _build_devcontainer_zip_bytes(request_data: DevcontainerBuildRequest) -> byt
         if installer_src.exists():
             zipf.write(installer_src, "environment_installer.py")
 
-        on_attach_path = DEVCONTAINER_BUILDER_FILES_DIR / "on_attach.py"
-        if on_attach_path.exists():
-            zipf.write(on_attach_path, "on_attach.py")
+        requirements_path = DEVCONTAINER_BUILDER_FILES_DIR / "requirements.txt"
+        if requirements_path.exists():
+            zipf.write(requirements_path, ".devcontainer/requirements.txt")
+
+        if request_data.profile == "kubernetes":
+            on_attach_src = DEVCONTAINER_BUILDER_FILES_DIR / "on_attach_kubernetes.py"
+        else:
+            on_attach_src = DEVCONTAINER_BUILDER_FILES_DIR / "on_attach.py"
+        if on_attach_src.exists():
+            zipf.write(on_attach_src, "on_attach.py")
+
+        if request_data.profile == "kubernetes":
+            kind_cluster_src = DEVCONTAINER_BUILDER_FILES_DIR / "kind-cluster.yml"
+            if kind_cluster_src.exists():
+                kind_cluster_content = kind_cluster_src.read_text(encoding="utf-8")
+                kind_cluster_content = kind_cluster_content.replace("{name}", devcontainer_json["name"])
+                zipf.writestr(".devcontainer/kind-cluster.yml", kind_cluster_content)
 
     return buffer.getvalue()
 
@@ -1628,7 +1680,7 @@ async def build_devcontainer_scaffold(data: DevcontainerBuildRequest):
     """Build and return a ZIP scaffold containing a generated devcontainer config."""
     zip_bytes = _build_devcontainer_zip_bytes(data)
     safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", _sanitize_devcontainer_name(data.name).lower())
-    filename = f"{safe_name or 'devcontainer'}-devcontainer-scaffold.zip"
+    filename = f"{safe_name or 'devcontainer'}.zip"
 
     return StreamingResponse(
         io.BytesIO(zip_bytes),

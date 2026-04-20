@@ -57,8 +57,7 @@
         recommendedOnlyInput: document.getElementById('dcbRecommendedOnly'),
         featureSelect: document.getElementById('dcbFeatureSelect'),
         addFeatureButton: document.getElementById('dcbAddFeatureBtn'),
-        featureSpotlight: document.getElementById('dcbFeatureSpotlight'),
-        selectedFeaturePills: document.getElementById('dcbSelectedFeaturePills'),
+selectedFeaturePills: document.getElementById('dcbSelectedFeaturePills'),
         featureCount: document.getElementById('dcbFeatureCount'),
         configCards: document.getElementById('dcbConfigCards'),
         preview: document.getElementById('dcbPreview'),
@@ -78,7 +77,11 @@
         presetKubernetesButton: document.getElementById('dcbPresetK8s'),
         forwardPortsInput: document.getElementById('dcbForwardPorts'),
         postCreateInput: document.getElementById('dcbPostCreateCommand'),
-        postAttachInput: document.getElementById('dcbPostAttachCommand')
+        postAttachInput: document.getElementById('dcbPostAttachCommand'),
+        hostCpusInput: document.getElementById('dcbHostCpus'),
+        hostMemoryInput: document.getElementById('dcbHostMemory'),
+        hostStorageInput: document.getElementById('dcbHostStorage'),
+        hostGpuInput: document.getElementById('dcbHostGpu')
     };
 
     const quickPickButtons = Array.from(document.querySelectorAll('.dcb-quick-pick'));
@@ -162,8 +165,8 @@
             forwardPorts: [],
             portsAttributes: {},
             hostRequirements: {},
-            postCreateCommand: '',
-            postAttachCommand: '',
+            postCreateCommand: 'pip install -r .devcontainer/requirements.txt && python environment_installer.py',
+            postAttachCommand: 'python on_attach.py',
             secrets: {}
         };
     }
@@ -180,10 +183,20 @@
     }
 
     function getAdvancedOverrides() {
+        const hostRequirements = {};
+        const cpus = parseInt(elements.hostCpusInput.value, 10);
+        if (cpus > 0) { hostRequirements.cpus = cpus; }
+        const memory = (elements.hostMemoryInput.value || '').trim();
+        if (memory) { hostRequirements.memory = memory; }
+        const storage = (elements.hostStorageInput.value || '').trim();
+        if (storage) { hostRequirements.storage = storage; }
+        if (elements.hostGpuInput.checked) { hostRequirements.gpu = true; }
+
         return {
             forwardPorts: parsePorts(elements.forwardPortsInput.value || ''),
             postCreateCommand: (elements.postCreateInput.value || '').trim(),
-            postAttachCommand: (elements.postAttachInput.value || '').trim()
+            postAttachCommand: (elements.postAttachInput.value || '').trim(),
+            hostRequirements
         };
     }
 
@@ -247,7 +260,7 @@
         return {
             forwardPorts: overrides.forwardPorts.length > 0 ? overrides.forwardPorts : profileDefaults.forwardPorts,
             portsAttributes: profileDefaults.portsAttributes,
-            hostRequirements: profileDefaults.hostRequirements,
+            hostRequirements: Object.keys(overrides.hostRequirements).length > 0 ? overrides.hostRequirements : profileDefaults.hostRequirements,
             postCreateCommand: overrides.postCreateCommand || profileDefaults.postCreateCommand,
             postAttachCommand: overrides.postAttachCommand || profileDefaults.postAttachCommand,
             secrets: profileDefaults.secrets
@@ -336,38 +349,14 @@
         quickPickButtons.forEach((button) => {
             const reference = button.dataset.featureRef;
             const isLocked = isLockedFeatureForCurrentProfile(reference);
+            const isSelected = state.selectedMap.has(reference);
             button.hidden = isLocked;
             button.disabled = isLocked;
+            button.classList.toggle('is-active', isSelected);
         });
     }
 
-    function renderFeatureSpotlight(feature) {
-        if (!feature) {
-            elements.featureSpotlight.innerHTML = '<div class="dcb-empty-state">No optional add-ons available with the current filter.</div>';
-            return;
-        }
-
-        const optionCount = Object.keys(feature.options || {}).length;
-        const docsLink = feature.documentationURL
-            ? '<a href="' + feature.documentationURL + '" target="_blank" rel="noopener">Open documentation</a>'
-            : '';
-
-        const recommendation = RECOMMENDED_BY_PROFILE[state.profile] || [];
-        const isRecommended = recommendation.includes(feature.reference);
-
-        elements.featureSpotlight.innerHTML = [
-            '<span class="dcb-kicker">Feature spotlight</span>',
-            '<h3>' + feature.displayName + '</h3>',
-            '<p>' + (feature.description || 'No description provided.') + '</p>',
-            '<div class="dcb-feature-meta">Maintainer: ' + feature.maintainer + '</div>',
-            '<div class="dcb-feature-meta">Reference: ' + feature.reference + '</div>',
-            '<div class="dcb-feature-meta">Options: ' + optionCount + '</div>',
-            '<div class="dcb-feature-meta">Recommended for this profile: ' + (isRecommended ? 'Yes' : 'No') + '</div>',
-            docsLink
-        ].filter(Boolean).join('');
-    }
-
-    function renderFeatureSelect() {
+function renderFeatureSelect() {
         updateQuickPickVisibility();
 
         const optional = state.filteredCatalog.filter((feature) => {
@@ -382,7 +371,6 @@
             option.textContent = 'No optional add-ons match your filter';
             elements.featureSelect.appendChild(option);
             elements.addFeatureButton.disabled = true;
-            renderFeatureSpotlight(null);
             return;
         }
 
@@ -394,8 +382,6 @@
         });
 
         elements.addFeatureButton.disabled = false;
-        const first = optional[0];
-        renderFeatureSpotlight(first);
     }
 
     function renderSelectedFeaturePills() {
@@ -433,6 +419,7 @@
                 renderSelectedFeaturePills();
                 renderConfigCards();
                 updateSummary();
+                updateQuickPickVisibility();
                 saveDraft();
             });
 
@@ -541,6 +528,7 @@
                 renderSelectedFeaturePills();
                 renderConfigCards();
                 updateSummary();
+                updateQuickPickVisibility();
                 saveDraft();
             });
 
@@ -608,7 +596,6 @@
         }
 
         if (state.selectedMap.has(reference)) {
-            showMessage('error', 'Add-on already selected: ' + feature.displayName);
             return;
         }
 
@@ -675,6 +662,10 @@
             forwardPorts: elements.forwardPortsInput.value,
             postCreateCommand: elements.postCreateInput.value,
             postAttachCommand: elements.postAttachInput.value,
+            hostCpus: elements.hostCpusInput.value,
+            hostMemory: elements.hostMemoryInput.value,
+            hostStorage: elements.hostStorageInput.value,
+            hostGpu: elements.hostGpuInput.checked,
             selectedReferences: Array.from(state.selectedMap.keys()).filter((reference) => !isLockedFeatureForCurrentProfile(reference)),
             selectedOptions: Array.from(state.selectedMap.entries())
                 .filter(([reference]) => !isLockedFeatureForCurrentProfile(reference))
@@ -707,6 +698,10 @@
             elements.forwardPortsInput.value = draft.forwardPorts || elements.forwardPortsInput.value;
             elements.postCreateInput.value = draft.postCreateCommand || elements.postCreateInput.value;
             elements.postAttachInput.value = draft.postAttachCommand || elements.postAttachInput.value;
+            elements.hostCpusInput.value = draft.hostCpus || '2';
+            elements.hostMemoryInput.value = draft.hostMemory || '4gb';
+            elements.hostStorageInput.value = draft.hostStorage || '32gb';
+            elements.hostGpuInput.checked = Boolean(draft.hostGpu);
 
             (draft.selectedReferences || []).forEach((reference) => {
                 const feature = state.catalog.find((item) => item.reference === reference);
@@ -734,7 +729,7 @@
     async function downloadZip() {
         const payload = buildRequestPayload();
         if (!payload.name) {
-            showMessage('error', 'Please provide a container name before generating the ZIP.');
+            showMessage('error', 'Please provide a Demo name before generating the ZIP.');
             nameInput.focus();
             return;
         }
@@ -818,10 +813,6 @@
         saveDraft();
     });
 
-    elements.featureSelect.addEventListener('change', () => {
-        const feature = state.catalog.find((item) => item.reference === elements.featureSelect.value);
-        renderFeatureSpotlight(feature || null);
-    });
 
     elements.addFeatureButton.addEventListener('click', () => {
         if (elements.featureSelect.value) {
@@ -829,11 +820,16 @@
         }
     });
 
-    [nameInput, elements.baseImageInput, elements.forwardPortsInput, elements.postCreateInput, elements.postAttachInput].forEach((input) => {
+    [nameInput, elements.baseImageInput, elements.forwardPortsInput, elements.postCreateInput, elements.postAttachInput, elements.hostCpusInput, elements.hostMemoryInput, elements.hostStorageInput].forEach((input) => {
         input.addEventListener('input', () => {
             updateSummary();
             saveDraft();
         });
+    });
+
+    elements.hostGpuInput.addEventListener('change', () => {
+        updateSummary();
+        saveDraft();
     });
 
     elements.includeGitIgnoreInput.addEventListener('change', () => {
@@ -843,7 +839,24 @@
 
     quickPickButtons.forEach((button) => {
         button.addEventListener('click', () => {
-            addFeatureByReference(button.dataset.featureRef);
+            const reference = button.dataset.featureRef;
+            if (button.classList.contains('is-active')) {
+                const actualKey = Array.from(state.selectedMap.keys()).find(
+                    (k) => k.toLowerCase() === reference.toLowerCase()
+                );
+                if (actualKey) {
+                    state.selectedMap.delete(actualKey);
+                }
+                ensureLockedFeaturesForCurrentProfile();
+                filterCatalog();
+                renderSelectedFeaturePills();
+                renderConfigCards();
+                updateSummary();
+                updateQuickPickVisibility();
+                saveDraft();
+            } else {
+                addFeatureByReference(reference);
+            }
         });
     });
 
@@ -874,6 +887,5 @@
         })
         .catch((error) => {
             showMessage('error', 'Failed to load feature catalog: ' + error.message);
-            renderFeatureSpotlight(null);
         });
 })();

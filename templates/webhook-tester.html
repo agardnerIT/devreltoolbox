@@ -8,8 +8,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg-1: #0b1533;
-            --bg-2: #154caa;
             --panel: #ffffff;
             --border: #d8e0ee;
             --text: #192744;
@@ -22,10 +20,7 @@
         body {
             font-family: 'DT Flow', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text);
-            background:
-                radial-gradient(1100px 600px at 10% -10%, rgba(255,255,255,0.18) 0%, transparent 45%),
-                radial-gradient(900px 500px at 90% -20%, rgba(0,230,200,0.16) 0%, transparent 45%),
-                linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            background: linear-gradient(135deg, #1966FF 0%, #5E29E5 100%);
             min-height: 100vh;
             padding-bottom: 80px;
         }
@@ -38,25 +33,24 @@
             position: sticky;
             top: 0;
             z-index: 200;
-            background: rgba(7, 18, 42, 0.62);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.14);
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(8px);
         }
         header svg { width: 32px; height: 32px; fill: #fff; flex-shrink: 0; }
         .titles { flex: 1; display: flex; flex-direction: column; line-height: 1.1; }
         .brand { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
         header h1 { font-size: 18px; font-weight: 700; color: #fff; }
         header a.back {
-            color: rgba(255,255,255,0.85);
+            color: rgba(255,255,255,0.75);
             text-decoration: none;
             font-size: 13px;
-            font-weight: 600;
-            padding: 6px 14px;
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 999px;
-            transition: background 0.2s, border-color 0.2s;
+            font-weight: 500;
+            padding: 5px 14px;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            transition: background 0.2s;
         }
-        header a.back:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.7); }
+        header a.back:hover { background: rgba(255,255,255,0.15); }
 
         main {
             max-width: 800px;
