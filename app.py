@@ -453,7 +453,493 @@ GIF_OUTPUT_DIR.mkdir(exist_ok=True)
 
 # LangDock / OpenAI-compatible endpoint configuration
 LANGDOCK_ENDPOINT = "https://chat.langdock.internal.dynatrace.com/api/public/openai/eu/v1/chat/completions"
-LANGDOCK_MODEL = "gpt-5-1"
+LANGDOCK_MODEL = os.environ.get("LANGDOCK_MODEL", "gpt-5-mini")
+
+# Browser Recorder directories
+RECORDINGS_DIR = BASE_DIR / "recordings"
+RECORDINGS_DIR.mkdir(exist_ok=True)
+
+PLAYWRIGHT_SCRIPTS_DIR = BASE_DIR / "playwright_scripts"
+PLAYWRIGHT_SCRIPTS_DIR.mkdir(exist_ok=True)
+
+BROWSER_RECORDER_WAIT_TIPS_FILE = BASE_DIR / "browser_recorder_wait_tips.json"
+
+# Job registry for tracking browser recordings in progress
+_recording_jobs: dict[str, dict] = {}
+
+PLAYWRIGHT_SYSTEM_PROMPT = """You are an expert Playwright Python automation engineer.
+
+Your task: given a plain-English description of browser actions, write a complete
+Python script that uses Playwright's synchronous API to perform those actions while
+recording a video.
+
+OUTPUT RULES:
+- Output ONLY valid Python code. No markdown. No ``` fences. No explanatory prose.
+- The script must be runnable with `python script.py` without any modification.
+
+MANDATORY SCRIPT STRUCTURE — keep this structure exactly, only change the actions
+section marked with the comment:
+
+```
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from pathlib import Path
+import time
+
+OUTPUT_DIR = Path(__file__).parent
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(
+        record_video_dir=str(OUTPUT_DIR),
+        record_video_size={"width": 1920, "height": 1080},
+        viewport={"width": 1920, "height": 1080},
+    )
+    page = context.new_page()
+
+    # ── RECORDED ACTIONS ───────────────────────────────────────────────────
+    # << REPLACE THIS COMMENT WITH THE ACTIONS >>
+    # ── END RECORDED ACTIONS ───────────────────────────────────────────────
+
+    context.close()
+    browser.close()
+```
+
+COMMON PATTERNS — use these:
+- Navigate:           page.goto("https://example.com")
+- Wait for load:      page.wait_for_load_state("networkidle")
+- Click by role:      page.get_by_role("button", name="Submit", exact=True).first.click()
+- Click link by role: page.get_by_role("link", name="Dynatrace Hub", exact=True).first.click()
+- Robust click (fallback):
+  locator = page.get_by_role("link", name="Dynatrace Hub", exact=True).first
+  locator.scroll_into_view_if_needed()
+  try:
+      locator.click(timeout=8000)
+  except PlaywrightTimeoutError:
+      locator.click(timeout=8000, force=True)
+- Click by selector:  page.locator("css-selector").click()
+- Fill a field:       page.get_by_label("Search").fill("query text")
+- Search then Enter:  page.get_by_placeholder("Search").fill("text"); page.keyboard.press("Enter")
+- Hover:              page.hover("selector")
+- Wait for element:   page.wait_for_selector("selector", timeout=10000)
+- Pause for camera:   time.sleep(0.7)  # keep the video readable but avoid long idle gaps
+- Final hold:         time.sleep(5)  # always hold on the final state so viewers can see the result
+- Scroll:             page.evaluate("window.scrollBy(0, 400)")
+- Screenshot (debug): page.screenshot(path=str(OUTPUT_DIR / "debug.png"))
+
+IMPORTANT:
+- Prefer wait_for_load_state("networkidle") after navigation.
+- Prefer exact matching for text and role locators to avoid strict mode collisions.
+- DO NOT use `page.get_by_text(...).click()` for interactive actions.
+- If the user provides a selector in their prompt, use that exact selector with `page.locator("...").first` for the click target.
+- When using user-provided selectors for targets that may be off-screen, call `scroll_into_view_if_needed()` before clicking.
+- For clickable elements without a user-provided selector, use role-based locators (`button`, `link`, `menuitem`) with `name=...`, `exact=True`, and `.first.click()`.
+- For navigation links specifically, always use `page.get_by_role("link", name="...", exact=True).first.click()`.
+- For links/cards that can be outside viewport, always call `scroll_into_view_if_needed()` before clicking.
+- If click still times out after scrolling, retry with `force=True` as fallback.
+- If a locator can match multiple elements, disambiguate with one of:
+    - `exact=True` on role/text locators
+    - a more specific accessible name
+    - `.filter(has_text="...")`
+    - `.first` when strict mode reports duplicate matches for the same accessible target
+- Add short time.sleep(0.4–0.9) pauses after key actions so the recording visibly shows the result without long delays.
+- ALWAYS add `time.sleep(5)` immediately after the final user-requested action so the video clearly shows the end state.
+- Use try/except PlaywrightTimeoutError only if a step is genuinely optional.
+- Never use page.pause() – it blocks headless execution.
+"""
+
+
+def _chromium_binary_exists() -> bool:
+    """Check if Chromium browser is installed under ~/.cache/ms-playwright/."""
+    import glob
+    pattern = str(Path.home() / ".cache/ms-playwright/chromium-*/chrome-linux/chrome")
+    return bool(glob.glob(pattern))
+
+
+def _playwright_runtime_dependencies_ok() -> tuple[bool, str]:
+    """Verify Linux browser dependencies by launching Chromium once."""
+    cmd = [
+        sys.executable,
+        "-c",
+        (
+            "from playwright.sync_api import sync_playwright; "
+            "p=sync_playwright().start(); "
+            "b=p.chromium.launch(headless=True); "
+            "b.close(); "
+            "p.stop()"
+        ),
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+        if result.returncode == 0:
+            return True, "ok"
+        combined = (result.stderr or "") + "\n" + (result.stdout or "")
+        detail = combined.strip()[-500:]
+        return False, detail or "Chromium launch failed"
+    except Exception as exc:
+        return False, str(exc)
+
+
+def _job_dir(job_id: str) -> Path:
+    """Return (and create) the output dir for a job_id. Validates it stays inside RECORDINGS_DIR."""
+    safe = re.sub(r'[^a-zA-Z0-9_-]', '_', job_id)
+    path = (RECORDINGS_DIR / safe).resolve()
+    if not str(path).startswith(str(RECORDINGS_DIR.resolve())):
+        raise ValueError("Invalid job_id")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _cleanup_failed_recording_job_dir(job_dir: Path) -> None:
+    """Best-effort cleanup for failed recording jobs."""
+    resolved = job_dir.resolve()
+    if not str(resolved).startswith(str(RECORDINGS_DIR.resolve())):
+        return
+    if resolved.exists():
+        shutil.rmtree(resolved, ignore_errors=True)
+
+
+def _pick_browser_recorder_default_model(models: list[str], configured_model: str) -> str:
+    """Pick a fast modern default model from available options."""
+    preferred = [
+        "gpt-5-1",
+        "gpt-4.1-mini",
+        "gpt-4o-mini",
+        "gpt-5-mini",
+        "claude-3-5-haiku",
+        "claude-3-haiku",
+    ]
+    lowered = {m.lower(): m for m in models}
+    for pref in preferred:
+        for lm, original in lowered.items():
+            if pref in lm:
+                return original
+    if configured_model in models:
+        return configured_model
+    return models[0] if models else configured_model
+
+
+def _list_langdock_models() -> dict:
+    """Fetch available models from LangDock with a safe fallback."""
+    api_key = os.environ.get("LANGDOCK_API_KEY", "")
+    configured_model = os.environ.get("LANGDOCK_MODEL", "gpt-5-mini")
+    forced_default = "gpt-5-1"
+
+    fallback_models = []
+    for m in [forced_default, configured_model]:
+        if m and m not in fallback_models:
+            fallback_models.append(m)
+
+    result = {
+        "models": fallback_models,
+        "default_model": forced_default if forced_default in fallback_models else configured_model,
+        "configured_model": configured_model,
+        "source": "configured",
+    }
+
+    if result["default_model"] != configured_model:
+        result["default_note"] = (
+            f"Defaulting to {result['default_model']} for speed in Browser Recorder "
+            f"(LANGDOCK_MODEL is {configured_model})."
+        )
+
+    if not api_key:
+        result["warning"] = "LANGDOCK_API_KEY is not set"
+        return result
+
+    models_url = LANGDOCK_ENDPOINT.rsplit("/chat/completions", 1)[0] + "/models"
+    req = urllib.request.Request(
+        models_url,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="GET",
+    )
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=30) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+
+        items = body.get("data", []) if isinstance(body, dict) else []
+        models: list[str] = []
+        for item in items:
+            if isinstance(item, dict):
+                model_id = item.get("id")
+                if isinstance(model_id, str) and model_id.strip():
+                    models.append(model_id.strip())
+
+        deduped = sorted(set(models))
+        if deduped:
+            default_model = _pick_browser_recorder_default_model(deduped, configured_model)
+            payload = {
+                "models": deduped,
+                "default_model": default_model,
+                "configured_model": configured_model,
+                "source": "langdock",
+            }
+            if default_model != configured_model:
+                payload["default_note"] = (
+                    f"Defaulting to {default_model} for speed in Browser Recorder "
+                    f"(LANGDOCK_MODEL is {configured_model})."
+                )
+            return payload
+
+        result["warning"] = "No models returned from LangDock"
+        return result
+    except Exception as exc:
+        result["warning"] = f"Failed to fetch model list: {exc}"
+        return result
+
+
+def _load_browser_recorder_wait_tips() -> dict:
+    """Load wait tips for browser recorder from JSON file with safe fallback."""
+    fallback = {
+        "tips": [
+            {
+                "type": "advice",
+                "title": "Dynatrace docs",
+                "text": "Open Dynatrace docs while your recording plan is generated.",
+                "linkLabel": "Open docs",
+                "linkUrl": "https://docs.dynatrace.com",
+            }
+        ],
+        "source": "fallback",
+    }
+
+    try:
+        if not BROWSER_RECORDER_WAIT_TIPS_FILE.exists():
+            return {**fallback, "warning": f"Wait tips file not found: {BROWSER_RECORDER_WAIT_TIPS_FILE.name}"}
+
+        raw = json.loads(BROWSER_RECORDER_WAIT_TIPS_FILE.read_text(encoding="utf-8"))
+        tips = raw.get("tips", []) if isinstance(raw, dict) else []
+
+        def _extract_video_id(value: str) -> str:
+            text = (value or "").strip()
+            if not text:
+                return ""
+            if re.fullmatch(r"[A-Za-z0-9_-]{11}", text):
+                return text
+            for pattern in [r"/shorts/([A-Za-z0-9_-]{11})", r"[?&]v=([A-Za-z0-9_-]{11})", r"/embed/([A-Za-z0-9_-]{11})"]:
+                m = re.search(pattern, text)
+                if m:
+                    return m.group(1)
+            return ""
+
+        normalized = []
+        for tip in tips:
+            if not isinstance(tip, dict):
+                continue
+
+            tip_type_raw = tip.get("type", "advice")
+            tip_type = tip_type_raw.strip().lower() if isinstance(tip_type_raw, str) else "advice"
+            if tip_type not in {"advice", "short", "video"}:
+                tip_type = "advice"
+
+            title = tip.get("title")
+            text = tip.get("text")
+
+            if not (isinstance(title, str) and title.strip() and isinstance(text, str) and text.strip()):
+                continue
+
+            if tip_type == "short":
+                video_id = _extract_video_id(str(tip.get("videoId") or tip.get("linkUrl") or tip.get("url") or tip.get("watchUrl") or tip.get("embedUrl") or ""))
+                if not video_id:
+                    continue
+                link_label = tip.get("linkLabel") if isinstance(tip.get("linkLabel"), str) and tip.get("linkLabel").strip() else "Open short on YouTube"
+                if isinstance(tip.get("linkUrl"), str) and tip.get("linkUrl").strip():
+                    link_url = tip.get("linkUrl")
+                elif isinstance(tip.get("url"), str) and tip.get("url").strip():
+                    link_url = tip.get("url")
+                else:
+                    link_url = f"https://www.youtube.com/shorts/{video_id}"
+                normalized.append({"type": "short", "title": title.strip(), "text": text.strip(), "videoId": video_id, "linkLabel": link_label.strip(), "linkUrl": link_url.strip()})
+                continue
+
+            link_label = tip.get("linkLabel")
+            link_url = tip.get("linkUrl") or tip.get("url")
+            if all(isinstance(v, str) and v.strip() for v in (link_label, link_url)):
+                normalized_tip = {"type": tip_type, "title": title.strip(), "text": text.strip(), "linkLabel": link_label.strip(), "linkUrl": link_url.strip()}
+                if tip_type == "video":
+                    video_id = _extract_video_id(str(tip.get("videoId") or link_url or tip.get("watchUrl") or tip.get("embedUrl") or ""))
+                    if video_id:
+                        normalized_tip["videoId"] = video_id
+                normalized.append(normalized_tip)
+
+        if not normalized:
+            return {**fallback, "warning": "No valid tips in JSON file"}
+
+        return {"tips": normalized, "source": "file"}
+    except Exception as exc:
+        return {**fallback, "warning": f"Failed to load tips file: {exc}"}
+
+
+def _call_langdock_script(description: str, model_override: str | None = None) -> str:
+    """Call LangDock to generate a Playwright script. Returns script text."""
+    api_key = os.environ.get("LANGDOCK_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("LANGDOCK_API_KEY is not set")
+
+    model = (model_override or os.environ.get("LANGDOCK_MODEL", "gpt-5-mini")).strip()
+    timeout_seconds = int(os.environ.get("BROWSER_RECORDER_LANGDOCK_TIMEOUT", "180"))
+    retries = int(os.environ.get("BROWSER_RECORDER_LANGDOCK_RETRIES", "2"))
+    max_tokens = int(os.environ.get("BROWSER_RECORDER_LANGDOCK_MAX_TOKENS", "6000"))
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": PLAYWRIGHT_SYSTEM_PROMPT},
+            {"role": "user", "content": description},
+        ],
+        "temperature": 0.2,
+        "max_tokens": max_tokens,
+    }
+
+    payload_json = json.dumps(payload).encode()
+
+    req = urllib.request.Request(
+        LANGDOCK_ENDPOINT,
+        data=payload_json,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    def _extract_choice_content(body: dict) -> str:
+        choices = body.get("choices") or []
+        if not choices:
+            return ""
+        choice = choices[0] if isinstance(choices[0], dict) else {}
+        message = choice.get("message") if isinstance(choice.get("message"), dict) else {}
+        raw_content = message.get("content")
+        if isinstance(raw_content, str):
+            return raw_content.strip()
+        if isinstance(raw_content, list):
+            parts: list[str] = []
+            for part in raw_content:
+                if isinstance(part, str):
+                    parts.append(part)
+                elif isinstance(part, dict):
+                    text_part = part.get("text")
+                    if isinstance(text_part, str):
+                        parts.append(text_part)
+            return "\n".join(p for p in parts if p).strip()
+        text_fallback = choice.get("text")
+        if isinstance(text_fallback, str):
+            return text_fallback.strip()
+        return ""
+
+    last_error = None
+    for attempt in range(1, retries + 2):
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=timeout_seconds) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                if "choices" not in body:
+                    raise KeyError("'choices' not in response")
+                content = _extract_choice_content(body)
+                if not content:
+                    last_error = RuntimeError("LangDock returned an empty script. Try a more specific prompt or retry.")
+                    if attempt <= retries:
+                        time.sleep(min(2 * attempt, 5))
+                        continue
+                    raise last_error
+                return content
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            if e.code >= 500 and attempt <= retries:
+                last_error = RuntimeError(f"LangDock API returned {e.code}: {error_body}")
+                time.sleep(min(2 * attempt, 5))
+                continue
+            raise RuntimeError(f"LangDock API returned {e.code}: {error_body}")
+        except urllib.error.URLError as e:
+            last_error = RuntimeError(f"Network error connecting to LangDock: {e.reason}")
+            if attempt <= retries:
+                time.sleep(min(2 * attempt, 5))
+                continue
+            raise last_error
+        except socket.timeout:
+            last_error = RuntimeError(f"Request to LangDock timed out after {timeout_seconds}s")
+            if attempt <= retries:
+                time.sleep(min(2 * attempt, 5))
+                continue
+            raise last_error
+        except Exception:
+            raise
+
+    if last_error:
+        raise last_error
+    raise RuntimeError("LangDock request failed unexpectedly")
+
+
+def _start_recording_job(job_id: str, job_dir: Path, script_path: Path):
+    """Start a background recording job."""
+    _recording_jobs[job_id] = {"status": "running", "log": [], "mp4_filename": None, "error": None}
+
+    def run():
+        entry = _recording_jobs[job_id]
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, str(script_path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                cwd=str(job_dir),
+            )
+            try:
+                for line in proc.stdout:
+                    entry["log"].append(line.rstrip())
+                proc.wait(timeout=300)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+                raise RuntimeError("Script exceeded the 5-minute time limit.")
+
+            if proc.returncode != 0:
+                combined_log = "\n".join(entry["log"][-120:]).lower()
+                if "host system is missing dependencies" in combined_log:
+                    raise RuntimeError("Playwright system dependencies are missing. Use 'Install automatically' in Step 1, then try again.")
+                raise RuntimeError(f"Script exited with code {proc.returncode}")
+
+            webm_files = list(job_dir.glob("*.webm"))
+            if not webm_files:
+                raise RuntimeError("Script ran successfully but no .webm recording was found.")
+            ranked_webm = sorted(webm_files, key=lambda p: (p.stat().st_size, p.stat().st_mtime), reverse=True)
+            webm_path = ranked_webm[0]
+            file_summaries = ", ".join(f"{p.name} ({p.stat().st_size // 1024} KB)" for p in ranked_webm)
+            entry["log"].append(f"[recorder] Found {len(ranked_webm)} WebM file(s): {file_summaries}")
+            if len(ranked_webm) > 1:
+                entry["log"].append(f"[recorder] Using largest recording candidate: {webm_path.name}")
+            else:
+                entry["log"].append(f"[recorder] Video captured: {webm_path.name}")
+
+            mp4_path = job_dir / "recording.mp4"
+            cmd = ["ffmpeg", "-y", "-i", str(webm_path), "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-pix_fmt", "yuv420p", str(mp4_path)]
+            entry["log"].append("[recorder] Converting to MP4…")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                raise RuntimeError(f"ffmpeg conversion failed: {result.stderr[-500:]}")
+
+            for raw in webm_files:
+                try:
+                    raw.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
+            entry["log"].append(f"[recorder] MP4 ready: recordings/{job_dir.name}/recording.mp4")
+            entry["mp4_filename"] = f"{job_dir.name}/recording.mp4"
+            entry["status"] = "done"
+
+        except Exception as exc:
+            entry["error"] = str(exc)
+            entry["log"].append(f"[recorder] ERROR: {exc}")
+            _cleanup_failed_recording_job_dir(job_dir)
+            entry["log"].append("[recorder] Cleaned up failed recording files.")
+            entry["status"] = "error"
+
+    threading.Thread(target=run, daemon=True).start()
 
 
 def parse_srt(content: str) -> list:
@@ -1908,6 +2394,200 @@ async def stop_webhook():
                 break
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+# ── Browser Recorder Endpoints ────────────────────────────────────────────────
+
+class BrowserRecorderGenerateRequest(BaseModel):
+    description: str
+    job_id: str
+    model: str | None = None
+
+
+class BrowserRecorderRunRequest(BaseModel):
+    job_id: str
+    script: str
+
+
+class BrowserRecorderRunScriptRequest(BaseModel):
+    filename: str
+
+
+@app.get("/browser-recorder/check-install")
+async def browser_recorder_check_install():
+    import importlib.util
+    pkg_ok = importlib.util.find_spec("playwright") is not None
+    browser_ok = _chromium_binary_exists()
+    deps_ok = False
+    deps_detail = "not checked"
+    if pkg_ok and browser_ok:
+        deps_ok, deps_detail = _playwright_runtime_dependencies_ok()
+    return JSONResponse({"pkg_ok": pkg_ok, "browser_ok": browser_ok, "deps_ok": deps_ok, "deps_detail": deps_detail})
+
+
+@app.get("/browser-recorder/models")
+async def browser_recorder_models():
+    return JSONResponse(_list_langdock_models())
+
+
+@app.get("/browser-recorder/wait-tips")
+async def browser_recorder_wait_tips():
+    return JSONResponse(_load_browser_recorder_wait_tips())
+
+
+@app.get("/browser-recorder/install")
+async def browser_recorder_install():
+    async def event_stream():
+        queue: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_event_loop()
+
+        def _emit(type_: str, **kwargs):
+            loop.call_soon_threadsafe(queue.put_nowait, {"type": type_, **kwargs})
+
+        def run():
+            cmds = [
+                [sys.executable, "-m", "pip", "install", "playwright"],
+                [sys.executable, "-m", "playwright", "install-deps"],
+                ["playwright", "install", "chromium"],
+            ]
+            for cmd in cmds:
+                _emit("log", line=f"\n$ {' '.join(cmd)}\n", is_cmd=True)
+                try:
+                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                    for line in proc.stdout:
+                        _emit("log", line=line.rstrip())
+                    proc.wait(timeout=300)
+                    if proc.returncode != 0:
+                        _emit("error", detail=f"Command failed (exit {proc.returncode}): {' '.join(cmd)}")
+                        return
+                except Exception as exc:
+                    _emit("error", detail=str(exc))
+                    return
+            _emit("done")
+
+        threading.Thread(target=run, daemon=True).start()
+        while True:
+            event = await queue.get()
+            yield f"data: {json.dumps(event)}\n\n"
+            if event["type"] in ("done", "error"):
+                break
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.post("/browser-recorder/generate")
+async def browser_recorder_generate(data: BrowserRecorderGenerateRequest):
+    if not data.description.strip():
+        raise HTTPException(status_code=422, detail="Description is required")
+
+    try:
+        requested_model = (data.model or "").strip() or None
+        script_text = _call_langdock_script(data.description, requested_model)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"LLM call failed: {str(exc)}")
+
+    job_dir = _job_dir(data.job_id)
+    safe_script_name = re.sub(r"[^a-zA-Z0-9_-]", "_", data.job_id) + ".py"
+    saved_script_path = (PLAYWRIGHT_SCRIPTS_DIR / safe_script_name).resolve()
+    if not str(saved_script_path).startswith(str(PLAYWRIGHT_SCRIPTS_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid script path")
+    saved_script_path.write_text(script_text, encoding="utf-8")
+
+    return JSONResponse({"job_id": data.job_id, "script": script_text, "saved_script_filename": safe_script_name})
+
+
+@app.post("/browser-recorder/run")
+async def browser_recorder_run(data: BrowserRecorderRunRequest):
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+", data.job_id):
+        raise HTTPException(status_code=400, detail="Invalid job_id")
+    if not data.script.strip():
+        raise HTTPException(status_code=400, detail="Script is required")
+
+    job_dir = _job_dir(data.job_id)
+    script_path = job_dir / "record.py"
+    script_path.write_text(data.script, encoding="utf-8")
+
+    safe_script_name = re.sub(r"[^a-zA-Z0-9_-]", "_", data.job_id) + ".py"
+    saved_script_path = (PLAYWRIGHT_SCRIPTS_DIR / safe_script_name).resolve()
+    if str(saved_script_path).startswith(str(PLAYWRIGHT_SCRIPTS_DIR.resolve())):
+        saved_script_path.write_text(data.script, encoding="utf-8")
+
+    _start_recording_job(data.job_id, job_dir, script_path)
+    return JSONResponse({"status": "started"})
+
+
+@app.get("/browser-recorder/stream/{job_id}")
+async def browser_recorder_stream(job_id: str):
+    safe = re.sub(r"[^a-zA-Z0-9_-]", "_", job_id)
+    if safe != job_id:
+        raise HTTPException(status_code=400, detail="Invalid job_id")
+
+    async def event_stream():
+        sent = 0
+        while True:
+            entry = _recording_jobs.get(job_id)
+            if entry is None:
+                yield f"data: {json.dumps({'type': 'error', 'detail': 'Unknown job'})}\n\n"
+                return
+
+            log = entry["log"]
+            while sent < len(log):
+                yield f"data: {json.dumps({'type': 'log', 'line': log[sent]})}\n\n"
+                sent += 1
+
+            if entry["status"] == "done":
+                yield f"data: {json.dumps({'type': 'done', 'mp4_filename': entry['mp4_filename']})}\n\n"
+                return
+            if entry["status"] == "error":
+                yield f"data: {json.dumps({'type': 'error', 'detail': entry['error']})}\n\n"
+                return
+
+            await asyncio.sleep(0.25)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@app.get("/browser-recorder/list-scripts")
+async def list_playwright_scripts():
+    PLAYWRIGHT_SCRIPTS_DIR.mkdir(exist_ok=True)
+    scripts = sorted(f.name for f in PLAYWRIGHT_SCRIPTS_DIR.iterdir() if f.is_file() and f.suffix == ".py")
+    return JSONResponse({"scripts": scripts})
+
+
+@app.post("/browser-recorder/run-script")
+async def browser_recorder_run_script(data: BrowserRecorderRunScriptRequest):
+    name = data.filename
+    if "/" in name or "\\" in name or not name.endswith(".py"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    src_path = (PLAYWRIGHT_SCRIPTS_DIR / name).resolve()
+    if not str(src_path).startswith(str(PLAYWRIGHT_SCRIPTS_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not src_path.exists():
+        raise HTTPException(status_code=404, detail="Script not found")
+
+    job_id = str(uuid.uuid4())
+    job_dir = _job_dir(job_id)
+    shutil.copy2(src_path, job_dir / "record.py")
+    _start_recording_job(job_id, job_dir, job_dir / "record.py")
+    return JSONResponse({"status": "started", "job_id": job_id})
+
+
+@app.get("/download-recording/{job_id}/recording.mp4")
+async def download_recording(job_id: str):
+    safe = re.sub(r"[^a-zA-Z0-9_-]", "_", job_id)
+    mp4_path = (RECORDINGS_DIR / safe / "recording.mp4").resolve()
+    if not str(mp4_path).startswith(str(RECORDINGS_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not mp4_path.exists():
+        raise HTTPException(status_code=404, detail="Recording not found")
+    return FileResponse(mp4_path, media_type="video/mp4", filename="recording.mp4")
+
+
+@app.get("/browser-recorder", response_class=HTMLResponse)
+async def browser_recorder_page():
+    template = jinja_env.get_template("browser-recorder.html")
+    return HTMLResponse(template.render())
 
 
 if __name__ == "__main__":
