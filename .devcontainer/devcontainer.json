@@ -10,7 +10,7 @@
     "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
     "ghcr.io/devcontainers-extra/features/yt-dlp:2": {}
   },
-  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --no-cache-dir -r requirements.txt",
+  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install --no-cache-dir -r requirements.txt && python app.py",
   "postAttachCommand": "python on_attach.py",
   "forwardPorts": [8000, 8084],
   "portsAttributes": {
